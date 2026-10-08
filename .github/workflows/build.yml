@@ -1,6 +1,6 @@
 name: Build zixora VPN APK
 
-# Builds automatically when you push to master, or manually from the Actions tab.
+# Builds automatically when you push to master/main, or manually from the Actions tab.
 on:
   workflow_dispatch:
   push:
@@ -19,8 +19,20 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v7
       with:
-        submodules: 'recursive'
         fetch-depth: '0'
+
+    # The two native submodules are cloned explicitly because this fork was
+    # created by uploading files (no git submodule metadata in the repo).
+    - name: Clone hev-socks5-tunnel sources
+      run: |
+        rm -rf hev-socks5-tunnel
+        git clone --depth 1 https://github.com/heiher/hev-socks5-tunnel.git hev-socks5-tunnel
+
+    - name: Clone AndroidLibXrayLite sources
+      run: |
+        rm -rf AndroidLibXrayLite
+        git clone https://github.com/2dust/AndroidLibXrayLite.git AndroidLibXrayLite
+        git -C AndroidLibXrayLite fetch --tags --force
 
     - name: Setup Android SDK
       uses: android-actions/setup-android@v4
@@ -44,7 +56,7 @@ jobs:
       uses: actions/cache/restore@v6
       with:
         path: ${{ github.workspace }}/libs
-        key: libhevtun-${{ runner.os }}-${{ env.NDK_HOME }}-${{ hashFiles('.git/modules/hev-socks5-tunnel/HEAD') }}-${{ hashFiles('compile-hevtun.sh') }}
+        key: libhevtun-${{ runner.os }}-${{ env.NDK_HOME }}-${{ hashFiles('compile-hevtun.sh') }}
 
     - name: Build libhevtun
       if: steps.cache-libhevtun-restore.outputs.cache-hit != 'true'
@@ -56,7 +68,7 @@ jobs:
       uses: actions/cache/save@v6
       with:
         path: ${{ github.workspace }}/libs
-        key: libhevtun-${{ runner.os }}-${{ env.NDK_HOME }}-${{ hashFiles('.git/modules/hev-socks5-tunnel/HEAD') }}-${{ hashFiles('compile-hevtun.sh') }}
+        key: libhevtun-${{ runner.os }}-${{ env.NDK_HOME }}-${{ hashFiles('compile-hevtun.sh') }}
 
     - name: Copy libhevtun
       run: |
