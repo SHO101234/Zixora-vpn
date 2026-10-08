@@ -23,15 +23,20 @@ jobs:
 
     # The two native submodules are cloned explicitly because this fork was
     # created by uploading files (no git submodule metadata in the repo).
+    # hev-socks5-tunnel has its own nested submodules, so --recurse-submodules
+    # is required; both repos are pinned to the same commits upstream uses.
     - name: Clone hev-socks5-tunnel sources
       run: |
         rm -rf hev-socks5-tunnel
-        git clone --depth 1 https://github.com/heiher/hev-socks5-tunnel.git hev-socks5-tunnel
+        git clone --recurse-submodules https://github.com/heiher/hev-socks5-tunnel.git hev-socks5-tunnel
+        git -C hev-socks5-tunnel checkout d9dca26c7ad0e494492244f0309e80ee583e739e
+        git -C hev-socks5-tunnel submodule update --init --recursive
 
     - name: Clone AndroidLibXrayLite sources
       run: |
         rm -rf AndroidLibXrayLite
         git clone https://github.com/2dust/AndroidLibXrayLite.git AndroidLibXrayLite
+        git -C AndroidLibXrayLite checkout ea96a7f9c33d6e18021386db96bf95680e853c93
         git -C AndroidLibXrayLite fetch --tags --force
 
     - name: Setup Android SDK
