@@ -112,7 +112,7 @@ fun SettingsScreen(
     var fragmentSettingsExpanded by rememberSaveable { mutableStateOf(false) }
     var observatorySettingsExpanded by rememberSaveable { mutableStateOf(false) }
     var advancedSettingsExpanded by rememberSaveable { mutableStateOf(true) }
-    var modeSettingsExpanded by rememberSaveable { mutableStateOf(false) }
+    var modeSettingsExpanded by rememberSaveable { mutableStateOf(true) }
 
     var localDns by rememberMmkvBool(AppConfig.PREF_LOCAL_DNS_ENABLED, false)
     var fakeDns by rememberMmkvBool(AppConfig.PREF_FAKE_DNS_ENABLED, false)
@@ -359,7 +359,8 @@ fun SettingsScreen(
                 SettingsListItem(
                     title = stringResource(R.string.title_pref_vpn_interface_address),
                     entries = interfaceAddrEntries,
-                    values = vpnInterfaceAddress,
+                    values = interfaceAddrValues,
+                    selectedValue = vpnInterfaceAddress,
                     enabled = isVpn,
                     onSelected = { vpnInterfaceAddress = it }
                 )
@@ -687,7 +688,7 @@ fun SettingsScreen(
                 )
                 SettingsSwitchItem(
                     title = stringResource(R.string.title_root_mode_enabled),
-                    summary = stringResource(R.string.summary_pref_root_mode_enabled),
+                    summary = stringResource(R.string.summary_root_mode_enabled),
                     checked = enableRootMode,
                     onCheckedChange = { newValue ->
                         if (newValue && !RootManager.cachedRoot()) {
