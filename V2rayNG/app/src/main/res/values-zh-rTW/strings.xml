@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name" translatable="false">v2rayNG</string>
+    <string name="app_name" translatable="false">Zixora</string>
     <string name="app_widget_name">開關</string>
     <string name="app_tile_name">開關</string>
     <string name="app_tile_first_use">首次使用此功能，請使用此應用程式新增伺服器</string>
@@ -406,6 +406,14 @@
     <string name="connection_connected">"已連線。輕觸以檢查連線。"</string>
     <string name="connection_not_connected">"未連線"</string>
     <string name="connection_running_task_left">正在執行的測試：%s</string>
+
+    <string name="home_days_remaining">剩餘 %1$d 天</string>
+    <string name="home_subscription_expired">訂閱已過期</string>
+    <string name="home_traffic_format">已使用 %1$s，共 %2$s</string>
+    <string name="home_no_server_selected">未選擇伺服器</string>
+    <string name="home_show_servers">伺服器</string>
+    <string name="home_traffic_total_unlimited">%1$s / ∞</string>
+    <string name="tab_home">首頁</string>
 
     <string name="import_subscription_success">匯入訂閱成功</string>
     <string name="import_subscription_failure">匯入訂閱失敗</string>
