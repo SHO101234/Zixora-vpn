@@ -30,6 +30,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.selected
@@ -76,10 +77,22 @@ internal fun MainHomeContent(
     val showCard = groupRemarks.isNotBlank() || serverRows.isNotEmpty() ||
             daysRemaining != null || trafficUsedBytes != null
 
+    // Navy brand backdrop (owner's logo-theme request): the light scheme's
+    // primary and the dark scheme's surfaceContainer both resolve to navy
+    // #091F5B; the paired colors below resolve to white / light blue in
+    // both schemes, so every element stays readable on the navy.
+    val darkScheme = MaterialTheme.colorScheme.background.luminance() < 0.5f
+    val backdrop = if (darkScheme) MaterialTheme.colorScheme.surfaceContainer
+    else MaterialTheme.colorScheme.primary
+    val onBackdrop = if (darkScheme) MaterialTheme.colorScheme.onBackground
+    else MaterialTheme.colorScheme.onPrimary
+    val onBackdropVariant = if (darkScheme) MaterialTheme.colorScheme.onSurfaceVariant
+    else MaterialTheme.colorScheme.primaryContainer
+
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.surfaceContainer)
+            .background(backdrop)
             .verticalScroll(rememberScrollState())
             .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally
@@ -92,26 +105,28 @@ internal fun MainHomeContent(
             ) {
                 Text(
                     text = "↑ ${upSpeedBytesPerSec.toSpeedString()}",
-                    style = MaterialTheme.typography.bodyMedium
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = onBackdropVariant
                 )
                 Text(
                     text = formatElapsed(elapsedSeconds),
-                    style = MaterialTheme.typography.bodyMedium
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = onBackdrop
                 )
                 Text(
                     text = "↓ ${downSpeedBytesPerSec.toSpeedString()}",
-                    style = MaterialTheme.typography.bodyMedium
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = onBackdropVariant
                 )
             }
             Spacer(modifier = Modifier.height(24.dp))
         }
 
-        // Connect medallion: thin outer ring and thick band in the scheme's
-        // primary tokens around a filled disc with the shield glyph. Brand
-        // tokens only. State is color-coded per the owner's request: while
-        // disconnected the disc is the lighter mid blue (tertiaryContainer
-        // #6F96D1 in the light scheme); once connected it switches to the
-        // deep navy primary (#091F5B), each with its matching on-color.
+        // Connect medallion on the navy backdrop: mid-blue ring and band so
+        // nothing blends into the background (owner's overlap concern).
+        // State is color-coded: disconnected disc = primary blue #334DAE;
+        // connected disc lights up to light blue #D0E4FD (light scheme) /
+        // mid #6F96D1 (dark scheme) with a navy shield glyph.
         Box(
             modifier = Modifier
                 .size(208.dp)
@@ -122,20 +137,35 @@ internal fun MainHomeContent(
             Box(
                 modifier = Modifier
                     .matchParentSize()
-                    .border(2.dp, MaterialTheme.colorScheme.primary, CircleShape)
+                    .border(
+                        2.dp,
+                        if (darkScheme) MaterialTheme.colorScheme.primary
+                        else MaterialTheme.colorScheme.tertiary,
+                        CircleShape
+                    )
             )
             Box(
                 modifier = Modifier
                     .size(188.dp)
-                    .border(12.dp, MaterialTheme.colorScheme.primaryContainer, CircleShape)
+                    .border(
+                        12.dp,
+                        if (darkScheme) MaterialTheme.colorScheme.tertiaryContainer
+                        else MaterialTheme.colorScheme.primaryContainer,
+                        CircleShape
+                    )
             )
             Box(
                 modifier = Modifier
                     .size(156.dp)
                     .clip(CircleShape)
                     .background(
-                        if (isRunning) MaterialTheme.colorScheme.primary
-                        else MaterialTheme.colorScheme.tertiaryContainer
+                        if (isRunning) {
+                            if (darkScheme) MaterialTheme.colorScheme.primary
+                            else MaterialTheme.colorScheme.primaryContainer
+                        } else {
+                            if (darkScheme) MaterialTheme.colorScheme.tertiaryContainer
+                            else MaterialTheme.colorScheme.tertiary
+                        }
                     ),
                 contentAlignment = Alignment.Center
             ) {
@@ -144,8 +174,13 @@ internal fun MainHomeContent(
                     contentDescription = stringResource(
                         if (isRunning) R.string.acc_stop else R.string.acc_start
                     ),
-                    tint = if (isRunning) MaterialTheme.colorScheme.onPrimary
-                    else MaterialTheme.colorScheme.onTertiaryContainer,
+                    tint = if (isRunning) {
+                        if (darkScheme) MaterialTheme.colorScheme.onPrimary
+                        else MaterialTheme.colorScheme.onPrimaryContainer
+                    } else {
+                        if (darkScheme) MaterialTheme.colorScheme.onTertiaryContainer
+                        else MaterialTheme.colorScheme.onTertiary
+                    },
                     modifier = Modifier.size(72.dp)
                 )
             }
@@ -158,13 +193,14 @@ internal fun MainHomeContent(
                 groupRemarks.ifBlank { stringResource(R.string.home_no_server_selected) }
             },
             style = MaterialTheme.typography.titleLarge,
+            color = onBackdrop,
             textAlign = TextAlign.Center
         )
 
         Text(
             text = statusText,
             style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            color = onBackdropVariant,
             textAlign = TextAlign.Center,
             modifier = Modifier
                 .padding(top = 4.dp)
