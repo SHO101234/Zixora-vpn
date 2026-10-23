@@ -52,7 +52,7 @@ import java.util.Locale
  * leaves through [onAction] or [onNavigate].
  */
 @Composable
-fun MainHomeContent(
+internal fun MainHomeContent(
     groupRemarks: String,
     daysRemaining: Long?,
     trafficUsedBytes: Long?,
