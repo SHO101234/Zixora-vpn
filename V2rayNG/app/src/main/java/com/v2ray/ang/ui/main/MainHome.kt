@@ -26,6 +26,7 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -89,6 +90,16 @@ internal fun MainHomeContent(
     val onBackdropVariant = if (darkScheme) MaterialTheme.colorScheme.onSurfaceVariant
     else MaterialTheme.colorScheme.primaryContainer
 
+    // Auto real-ping once per group so ping numbers show without a manual
+    // test (owner request). Re-fires only when the group/server set changes
+    // and no results exist yet.
+    val pingKey = groupRemarks + "|" + serverRows.size
+    LaunchedEffect(pingKey) {
+        if (serverRows.isNotEmpty() && serverRows.all { it.testDelayMillis == 0L }) {
+            onAction(MainAction.TestRealAllServers)
+        }
+    }
+
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -122,11 +133,19 @@ internal fun MainHomeContent(
             Spacer(modifier = Modifier.height(24.dp))
         }
 
-        // Connect medallion on the navy backdrop: mid-blue ring and band so
-        // nothing blends into the background (owner's overlap concern).
-        // State is color-coded: disconnected disc = primary blue #334DAE;
-        // connected disc lights up to light blue #D0E4FD (light scheme) /
-        // mid #6F96D1 (dark scheme) with a navy shield glyph.
+        // Connect medallion on the navy backdrop. State colors SWAPPED per
+        // the owner's call: disconnected = light blue disc (#D0E4FD) with a
+        // navy shield; connected = GREEN disc (#009966) with a white shield,
+        // so "connected" reads instantly. Ring follows the disc state; the
+        // band is deep blue when idle, pale green when connected.
+        val ringColor = if (isRunning) MaterialTheme.colorScheme.tertiary
+        else MaterialTheme.colorScheme.primaryContainer
+        val bandColor = if (isRunning) MaterialTheme.colorScheme.tertiaryContainer
+        else MaterialTheme.colorScheme.secondary
+        val discColor = if (isRunning) MaterialTheme.colorScheme.tertiary
+        else MaterialTheme.colorScheme.primaryContainer
+        val discTint = if (isRunning) MaterialTheme.colorScheme.onTertiary
+        else MaterialTheme.colorScheme.onPrimaryContainer
         Box(
             modifier = Modifier
                 .size(208.dp)
@@ -137,36 +156,18 @@ internal fun MainHomeContent(
             Box(
                 modifier = Modifier
                     .matchParentSize()
-                    .border(
-                        2.dp,
-                        if (darkScheme) MaterialTheme.colorScheme.primary
-                        else MaterialTheme.colorScheme.tertiary,
-                        CircleShape
-                    )
+                    .border(2.dp, ringColor, CircleShape)
             )
             Box(
                 modifier = Modifier
                     .size(188.dp)
-                    .border(
-                        12.dp,
-                        if (darkScheme) MaterialTheme.colorScheme.tertiaryContainer
-                        else MaterialTheme.colorScheme.primaryContainer,
-                        CircleShape
-                    )
+                    .border(12.dp, bandColor, CircleShape)
             )
             Box(
                 modifier = Modifier
                     .size(156.dp)
                     .clip(CircleShape)
-                    .background(
-                        if (isRunning) {
-                            if (darkScheme) MaterialTheme.colorScheme.primary
-                            else MaterialTheme.colorScheme.primaryContainer
-                        } else {
-                            if (darkScheme) MaterialTheme.colorScheme.tertiaryContainer
-                            else MaterialTheme.colorScheme.tertiary
-                        }
-                    ),
+                    .background(discColor),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
@@ -174,13 +175,7 @@ internal fun MainHomeContent(
                     contentDescription = stringResource(
                         if (isRunning) R.string.acc_stop else R.string.acc_start
                     ),
-                    tint = if (isRunning) {
-                        if (darkScheme) MaterialTheme.colorScheme.onPrimary
-                        else MaterialTheme.colorScheme.onPrimaryContainer
-                    } else {
-                        if (darkScheme) MaterialTheme.colorScheme.onTertiaryContainer
-                        else MaterialTheme.colorScheme.onTertiary
-                    },
+                    tint = discTint,
                     modifier = Modifier.size(72.dp)
                 )
             }
