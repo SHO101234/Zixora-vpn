@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name" translatable="false">v2rayNG</string>
+    <string name="app_name" translatable="false">Zixora</string>
     <string name="app_widget_name">تعویض</string>
     <string name="app_tile_name">تعویض</string>
     <string name="app_tile_first_use">برای اولین استفاده از این قابلیت، لطفاً ابتدا از داخل برنامه یک سرور اضافه کنید</string>
@@ -408,6 +408,14 @@
     <string name="connection_connected">متصل است.\nبرای بررسی اتصال ضربه بزنید.</string>
     <string name="connection_not_connected">متصل نیست</string>
     <string name="connection_running_task_left">آزمایش‌های در حال اجرا: %s</string>
+
+    <string name="home_days_remaining">%1$d روز باقی مانده</string>
+    <string name="home_subscription_expired">اشتراک منقضی شده است</string>
+    <string name="home_traffic_format">%1$s از %2$s استفاده شده</string>
+    <string name="home_no_server_selected">سروری انتخاب نشده است</string>
+    <string name="home_show_servers">سرورها</string>
+    <string name="home_traffic_total_unlimited">%1$s / ∞</string>
+    <string name="tab_home">خانه</string>
 
     <string name="import_subscription_success">اشتراک با موفقیت وارد شد</string>
     <string name="import_subscription_failure">وارد کردن اشتراک ناموفق بود</string>
