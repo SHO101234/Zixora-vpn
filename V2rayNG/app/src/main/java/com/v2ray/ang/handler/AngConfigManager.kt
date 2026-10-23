@@ -488,9 +488,10 @@ object AngConfigManager {
             val proxyUsername = SettingsManager.getSocksUsername()
             val proxyPassword = SettingsManager.getSocksPassword()
 
+            var userinfoRaw: String? = null
             var configText = try {
                 val httpPort = SettingsManager.getHttpPort()
-                HttpUtil.getUrlContentWithUserAgent(
+                val response = HttpUtil.getUrlContentWithUserAgentAndUserinfo(
                     UrlContentRequest(
                         url = url,
                         userAgent = userAgent,
@@ -501,19 +502,23 @@ object AngConfigManager {
                         proxyPassword = proxyPassword
                     )
                 )
+                userinfoRaw = response.subscriptionUserinfo
+                response.content
             } catch (e: Exception) {
                 LogUtil.e(AppConfig.ANG_PACKAGE, "Update subscription: proxy not ready or other error", e)
                 ""
             }
             if (configText.isEmpty()) {
                 configText = try {
-                    HttpUtil.getUrlContentWithUserAgent(
+                    val response = HttpUtil.getUrlContentWithUserAgentAndUserinfo(
                         UrlContentRequest(
                             url = url,
                             userAgent = userAgent,
                             requestHeaders = requestHeaders
                         )
                     )
+                    userinfoRaw = response.subscriptionUserinfo
+                    response.content
                 } catch (e: Exception) {
                     LogUtil.e(AppConfig.TAG, "Update subscription: Failed to get URL content with user agent", e)
                     ""
@@ -526,6 +531,9 @@ object AngConfigManager {
             val count = parseConfigViaSub(configText, it.guid, false)
             if (count > 0) {
                 it.subscription.lastUpdated = System.currentTimeMillis()
+                if (!userinfoRaw.isNullOrBlank()) {
+                    it.subscription.userinfoRaw = userinfoRaw
+                }
                 MmkvManager.encodeSubscription(it.guid, it.subscription)
                 LogUtil.i(AppConfig.TAG, "Subscription updated: ${it.subscription.remarks}, $count configs")
                 return SubscriptionUpdateResult(
