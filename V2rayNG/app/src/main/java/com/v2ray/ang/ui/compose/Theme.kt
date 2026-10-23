@@ -6,6 +6,7 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
@@ -19,6 +20,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
+import com.v2ray.ang.R
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 import com.v2ray.ang.AppConfig
@@ -100,6 +105,36 @@ private val DarkColor = darkColorScheme(
     surfaceContainerHigh = Color(0xFF282729), // Dark Gray
     surfaceContainerHighest = Color(0xFF333234), // Dark Gray
 )
+
+/** Poppins app font (owner asked for a prettier font). Latin glyphs come
+ *  from Poppins; Myanmar text falls back to the system font per glyph. */
+val PoppinsFamily = FontFamily(
+    Font(R.font.poppins_regular, FontWeight.Normal),
+    Font(R.font.poppins_medium, FontWeight.Medium),
+    Font(R.font.poppins_semibold, FontWeight.SemiBold),
+    Font(R.font.poppins_bold, FontWeight.Bold)
+)
+
+private fun poppinsTypography(): Typography {
+    val t = Typography()
+    return Typography(
+        displayLarge = t.displayLarge.copy(fontFamily = PoppinsFamily),
+        displayMedium = t.displayMedium.copy(fontFamily = PoppinsFamily),
+        displaySmall = t.displaySmall.copy(fontFamily = PoppinsFamily),
+        headlineLarge = t.headlineLarge.copy(fontFamily = PoppinsFamily),
+        headlineMedium = t.headlineMedium.copy(fontFamily = PoppinsFamily),
+        headlineSmall = t.headlineSmall.copy(fontFamily = PoppinsFamily),
+        titleLarge = t.titleLarge.copy(fontFamily = PoppinsFamily),
+        titleMedium = t.titleMedium.copy(fontFamily = PoppinsFamily),
+        titleSmall = t.titleSmall.copy(fontFamily = PoppinsFamily),
+        bodyLarge = t.bodyLarge.copy(fontFamily = PoppinsFamily),
+        bodyMedium = t.bodyMedium.copy(fontFamily = PoppinsFamily),
+        bodySmall = t.bodySmall.copy(fontFamily = PoppinsFamily),
+        labelLarge = t.labelLarge.copy(fontFamily = PoppinsFamily),
+        labelMedium = t.labelMedium.copy(fontFamily = PoppinsFamily),
+        labelSmall = t.labelSmall.copy(fontFamily = PoppinsFamily)
+    )
+}
 
 // Semantic Colors
 val colorPing = Color(0xFF009966) // Green
@@ -195,7 +230,8 @@ fun AppTheme(
         LocalAppSnackbar provides snackbarController
     ) {
         MaterialTheme(
-            colorScheme = colorScheme
+            colorScheme = colorScheme,
+            typography = poppinsTypography()
         ) {
             Box(modifier = Modifier.fillMaxSize()) {
                 AppSnackbarBridge(controller = snackbarController)
