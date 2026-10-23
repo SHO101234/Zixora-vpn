@@ -18,6 +18,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.v2ray.ang.dto.GroupMapItem
+import com.v2ray.ang.ui.compose.LocalDarkTheme
 import com.v2ray.ang.dto.entities.ServersCache
 import kotlinx.coroutines.flow.StateFlow
 
@@ -34,12 +35,16 @@ fun GroupTabBar(
         selectedTabIndex = selectedIndex,
         modifier = modifier
             .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.95f)),
+            .background(
+                if (LocalDarkTheme.current) MaterialTheme.colorScheme.surfaceContainer
+                else MaterialTheme.colorScheme.primary
+            ),
         edgePadding = 16.dp,
         indicator = { tabPositions ->
             TabRowDefaults.SecondaryIndicator(
                 modifier = Modifier.tabIndicatorOffset(tabPositions[selectedIndex]),
-                color = MaterialTheme.colorScheme.secondary
+                color = if (LocalDarkTheme.current) MaterialTheme.colorScheme.secondary
+                else MaterialTheme.colorScheme.primaryContainer
             )
         }
     ) {
@@ -74,6 +79,16 @@ private fun GroupTabItem(
     Tab(
         selected = selected,
         onClick = onClick,
+        selectedContentColor = if (LocalDarkTheme.current) {
+            MaterialTheme.colorScheme.onBackground
+        } else {
+            MaterialTheme.colorScheme.onPrimary
+        },
+        unselectedContentColor = if (LocalDarkTheme.current) {
+            MaterialTheme.colorScheme.onSurfaceVariant
+        } else {
+            MaterialTheme.colorScheme.primaryContainer
+        },
         modifier = Modifier
             .widthIn(min = 56.dp)
             .heightIn(min = 48.dp),
