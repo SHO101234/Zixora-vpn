@@ -288,6 +288,8 @@
     <string name="title_privacy_policy">Privacy policy</string>
     <string name="title_qr_code">QR code</string>
     <string name="title_about">About</string>
+    <string name="support_facebook">Support – Facebook Page</string>
+    <string name="support_telegram">Support – Telegram Bot</string>
     <string name="title_source_code">Source code</string>
     <string name="title_oss_license">Open-source licenses</string>
     <string name="title_translators">Translators</string>
