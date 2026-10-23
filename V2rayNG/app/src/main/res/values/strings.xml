@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name" translatable="false">zixora VPN</string>
+    <string name="app_name" translatable="false">Zixora</string>
     <string name="app_widget_name">Switch</string>
     <string name="app_tile_name">Switch</string>
     <string name="app_tile_first_use">Add a profile in the app before using this feature.</string>
@@ -410,6 +410,14 @@
     <string name="connection_connected">Connected. Tap to check connection.</string>
     <string name="connection_not_connected">Not connected</string>
     <string name="connection_running_task_left">Tests running: %s</string>
+
+    <string name="home_days_remaining">%1$d days remaining</string>
+    <string name="home_subscription_expired">Subscription expired</string>
+    <string name="home_traffic_format">%1$s of %2$s used</string>
+    <string name="home_no_server_selected">No server selected</string>
+    <string name="home_show_servers">Servers</string>
+    <string name="home_traffic_total_unlimited">%1$s / ∞</string>
+    <string name="tab_home">Home</string>
 
     <string name="import_subscription_success">Subscription imported successfully</string>
     <string name="import_subscription_failure">Import subscription failed</string>
