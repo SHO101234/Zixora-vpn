@@ -101,16 +101,31 @@ jobs:
         distribution: 'temurin'
         java-version: '21'
 
-    - name: Build debug APK
+    - name: Decode release keystore
+      env:
+        KEYSTORE_BASE64: ${{ secrets.ZIXORA_KEYSTORE_BASE64 }}
+      run: |
+        if [ -z "$KEYSTORE_BASE64" ]; then
+          echo "::error::ZIXORA_KEYSTORE_BASE64 secret is not set — release signing is required."
+          exit 1
+        fi
+        echo "$KEYSTORE_BASE64" | base64 -d > "${{ github.workspace }}/zixora-release.jks"
+
+    - name: Build release APK
+      env:
+        ZIXORA_KEYSTORE_FILE: ${{ github.workspace }}/zixora-release.jks
+        ZIXORA_KEYSTORE_PASSWORD: ${{ secrets.ZIXORA_KEYSTORE_PASSWORD }}
+        ZIXORA_KEY_ALIAS: ${{ secrets.ZIXORA_KEY_ALIAS }}
+        ZIXORA_KEY_PASSWORD: ${{ secrets.ZIXORA_KEY_PASSWORD }}
       run: |
         cd ${{ github.workspace }}/V2rayNG
         echo "sdk.dir=${ANDROID_HOME}" > local.properties
         chmod 755 gradlew
-        ./gradlew assemblePlaystoreDebug
+        ./gradlew assemblePlaystoreRelease
 
     - name: Upload APKs
       uses: actions/upload-artifact@v7
       if: ${{ success() }}
       with:
         name: zixora-vpn-apk
-        path: ${{ github.workspace }}/V2rayNG/app/build/outputs/apk/playstore/debug/*.apk
+        path: ${{ github.workspace }}/V2rayNG/app/build/outputs/apk/playstore/release/*.apk
