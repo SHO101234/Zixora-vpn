@@ -39,6 +39,8 @@ import com.v2ray.ang.R
 import com.v2ray.ang.extension.toSpeedString
 import com.v2ray.ang.extension.toTrafficString
 import com.v2ray.ang.ui.compose.colorConfigType
+import com.v2ray.ang.ui.compose.colorPing
+import com.v2ray.ang.ui.compose.colorPingRed
 import java.util.Locale
 
 /**
@@ -104,11 +106,13 @@ internal fun MainHomeContent(
 
         // Connect medallion: thin outer ring and thick band in the scheme's
         // primary tokens around a filled disc with the shield glyph. Brand
-        // tokens only — the light scheme primary is navy #091F5B, the dark
-        // scheme primary is mid #6F96D1, each with its matching onPrimary.
+        // tokens only. State is color-coded per the owner's request: while
+        // disconnected the disc is the lighter mid blue (tertiaryContainer
+        // #6F96D1 in the light scheme); once connected it switches to the
+        // deep navy primary (#091F5B), each with its matching on-color.
         Box(
             modifier = Modifier
-                .size(248.dp)
+                .size(208.dp)
                 .clickable { onAction(MainAction.ToggleService) }
                 .semantics(mergeDescendants = true) {},
             contentAlignment = Alignment.Center
@@ -120,14 +124,17 @@ internal fun MainHomeContent(
             )
             Box(
                 modifier = Modifier
-                    .size(224.dp)
-                    .border(14.dp, MaterialTheme.colorScheme.primaryContainer, CircleShape)
+                    .size(188.dp)
+                    .border(12.dp, MaterialTheme.colorScheme.primaryContainer, CircleShape)
             )
             Box(
                 modifier = Modifier
-                    .size(184.dp)
+                    .size(156.dp)
                     .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primary),
+                    .background(
+                        if (isRunning) MaterialTheme.colorScheme.primary
+                        else MaterialTheme.colorScheme.tertiaryContainer
+                    ),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
@@ -135,8 +142,9 @@ internal fun MainHomeContent(
                     contentDescription = stringResource(
                         if (isRunning) R.string.acc_stop else R.string.acc_start
                     ),
-                    tint = MaterialTheme.colorScheme.onPrimary,
-                    modifier = Modifier.size(84.dp)
+                    tint = if (isRunning) MaterialTheme.colorScheme.onPrimary
+                    else MaterialTheme.colorScheme.onTertiaryContainer,
+                    modifier = Modifier.size(72.dp)
                 )
             }
         }
@@ -304,12 +312,25 @@ private fun HomeServerRow(
                 color = if (selected) MaterialTheme.colorScheme.onPrimaryContainer
                 else MaterialTheme.colorScheme.onSurface
             )
-            if (row.typeDescription.isNotBlank()) {
-                Text(
-                    text = row.typeDescription,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = colorConfigType
-                )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (row.typeDescription.isNotBlank()) {
+                    Text(
+                        text = row.typeDescription,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = colorConfigType
+                    )
+                }
+                if (row.testDelayMillis != 0L) {
+                    Text(
+                        text = stringResource(
+                            R.string.server_test_delay_value,
+                            row.testDelayMillis
+                        ),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = if (row.testDelayMillis < 0L) colorPingRed else colorPing,
+                        modifier = Modifier.padding(start = 8.dp)
+                    )
+                }
             }
         }
     }
