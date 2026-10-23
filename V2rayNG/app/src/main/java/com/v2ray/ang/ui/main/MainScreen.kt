@@ -1,5 +1,6 @@
 package com.v2ray.ang.ui.main
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -9,9 +10,13 @@ import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.DrawerValue
+import androidx.compose.material3.Icon
 import androidx.compose.material3.ModalNavigationDrawer
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.ScaffoldDefaults
+import androidx.compose.material3.Text
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -26,13 +31,19 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.v2ray.ang.R
 import com.v2ray.ang.dto.entities.ProfileItem
 import com.v2ray.ang.ui.compose.LocalDarkTheme
 import com.v2ray.ang.ui.compose.QRCodeDialog
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
+
+/** Bottom-navigation tabs of the main screen. Home is the start tab. */
+internal enum class MainTab { HOME, SERVERS, SETTINGS }
 
 @Composable
 fun MainScreen(
@@ -53,6 +64,7 @@ fun MainScreen(
     val isDarkTheme = LocalDarkTheme.current
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
+    var selectedTab by rememberSaveable { mutableStateOf(MainTab.HOME) }
     var showSearch by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
     var showDelAllConfirm by remember { mutableStateOf(false) }
@@ -70,6 +82,21 @@ fun MainScreen(
             onAction(MainAction.RemoveServer(guid))
         }
     }
+
+    // Home is the start tab; from the other tabs, Back returns to Home
+    // (on Home itself the activity's own BackHandler keeps its behavior).
+    BackHandler(enabled = selectedTab != MainTab.HOME) {
+        selectedTab = MainTab.HOME
+    }
+
+    // Locating the selected server only makes sense in the server list.
+    LaunchedEffect(uiState.locateTarget) {
+        if (uiState.locateTarget != null) selectedTab = MainTab.SERVERS
+    }
+
+    // Server rows of the selected profile's group, shown inline on Home.
+    val homeGroupState by mainViewModel.serverGroupState(uiState.homeGroupId)
+        .collectAsStateWithLifecycle()
 
     val pagerState = rememberPagerState(
         initialPage = 0,
@@ -185,19 +212,81 @@ fun MainScreen(
                 )
             },
             bottomBar = {
-                MainBottomBar(
-                    displayText = displayText,
-                    isRunning = isRunning,
-                    isDarkTheme = isDarkTheme,
-                    onAction = onAction
-                )
+                Column {
+                    // The status/test bar stays with the Servers tab, where the
+                    // test actions live; Home has its own status line and the
+                    // big connect button instead.
+                    if (selectedTab == MainTab.SERVERS) {
+                        MainBottomBar(
+                            displayText = displayText,
+                            isRunning = isRunning,
+                            isDarkTheme = isDarkTheme,
+                            onAction = onAction
+                        )
+                    }
+                    NavigationBar {
+                        NavigationBarItem(
+                            selected = selectedTab == MainTab.HOME,
+                            onClick = { selectedTab = MainTab.HOME },
+                            icon = {
+                                Icon(
+                                    painterResource(R.drawable.ic_home_24dp),
+                                    contentDescription = null
+                                )
+                            },
+                            label = { Text(stringResource(R.string.tab_home)) }
+                        )
+                        NavigationBarItem(
+                            selected = selectedTab == MainTab.SERVERS,
+                            onClick = { selectedTab = MainTab.SERVERS },
+                            icon = {
+                                Icon(
+                                    painterResource(R.drawable.ic_subscriptions_24dp),
+                                    contentDescription = null
+                                )
+                            },
+                            label = { Text(stringResource(R.string.home_show_servers)) }
+                        )
+                        NavigationBarItem(
+                            selected = selectedTab == MainTab.SETTINGS,
+                            onClick = { selectedTab = MainTab.SETTINGS },
+                            icon = {
+                                Icon(
+                                    painterResource(R.drawable.ic_settings_24dp),
+                                    contentDescription = null
+                                )
+                            },
+                            label = { Text(stringResource(R.string.title_settings)) }
+                        )
+                    }
+                }
             },
             floatingActionButton = {},
         ) { innerPadding ->
             val layoutDirection = LocalLayoutDirection.current
 
-            if (groups.isNotEmpty()) {
-                Column(
+            when (selectedTab) {
+                MainTab.HOME -> MainHomeContent(
+                    groupRemarks = uiState.groupRemarks,
+                    daysRemaining = uiState.daysRemaining,
+                    trafficUsedBytes = uiState.trafficUsedBytes,
+                    trafficTotalBytes = uiState.trafficTotalBytes,
+                    lastUpdatedEpochMs = uiState.homeLastUpdatedEpochMs,
+                    selectedRemarks = uiState.selectedRemarks,
+                    selectedGuid = selectedGuid,
+                    serverRows = homeGroupState.rows,
+                    isRunning = isRunning,
+                    statusText = displayText,
+                    upSpeedBytesPerSec = uiState.homeUpSpeedBytesPerSec,
+                    downSpeedBytesPerSec = uiState.homeDownSpeedBytesPerSec,
+                    elapsedSeconds = uiState.homeElapsedSeconds,
+                    onAction = onAction,
+                    onNavigate = onNavigate,
+                    modifier = Modifier.padding(innerPadding)
+                )
+
+                MainTab.SERVERS -> if (groups.isNotEmpty()) {
+                    Column(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(innerPadding)
@@ -254,6 +343,12 @@ fun MainScreen(
                         )
                     }
                 }
+                }
+
+                MainTab.SETTINGS -> MainSettingsContent(
+                    onNavigate = onNavigate,
+                    modifier = Modifier.padding(innerPadding)
+                )
             }
         }
     }

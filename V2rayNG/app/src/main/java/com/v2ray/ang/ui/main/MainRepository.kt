@@ -16,6 +16,7 @@ import com.v2ray.ang.dto.entities.ProfileItem
 import com.v2ray.ang.dto.entities.ServerAffiliationInfo
 import com.v2ray.ang.dto.entities.SubscriptionCache
 import com.v2ray.ang.dto.entities.SubscriptionItem
+import com.v2ray.ang.core.CoreServiceManager
 import com.v2ray.ang.extension.serializable
 import com.v2ray.ang.handler.AngConfigManager
 import com.v2ray.ang.handler.AppLocaleManager
@@ -146,6 +147,19 @@ class MainRepository(
 
     override fun getSubscriptionItem(id: String): SubscriptionItem? =
         MmkvManager.decodeSubscription(id)
+
+    override fun queryTrafficDelta(): Pair<Long, Long> {
+        var uplink = 0L
+        var downlink = 0L
+        CoreServiceManager.queryAllOutboundTrafficStats().forEach { stat ->
+            if (stat.tag == AppConfig.TAG_BLOCKED) return@forEach
+            when (stat.direction) {
+                AppConfig.UPLINK -> uplink += stat.value
+                AppConfig.DOWNLINK -> downlink += stat.value
+            }
+        }
+        return uplink to downlink
+    }
 
     override fun getServerGuidList(groupId: String): List<String> =
         if (groupId.isEmpty()) {

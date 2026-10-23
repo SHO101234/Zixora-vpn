@@ -14,12 +14,14 @@ import com.v2ray.ang.dto.TestServiceMessage
 import com.v2ray.ang.dto.entities.ProfileItem
 import com.v2ray.ang.dto.entities.ServersCache
 import com.v2ray.ang.dto.entities.SubscriptionCache
+import com.v2ray.ang.dto.entities.SubscriptionItem
 import com.v2ray.ang.extension.delay
 import com.v2ray.ang.extension.isComplexType
 import com.v2ray.ang.extension.matchesPattern
 import com.v2ray.ang.extension.moveItem
 import com.v2ray.ang.ui.base.BaseViewModel
 import com.v2ray.ang.util.LogUtil
+import com.v2ray.ang.util.SubscriptionUserinfoParser
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
@@ -64,6 +66,43 @@ private fun applyTestDelayResultsToRows(
     } else {
         row.copy(testDelayMillis = delayMillis)
     }
+}
+
+/** Display-ready home data derived from the selected profile and its subscription. */
+internal data class MainHomeData(
+    val selectedRemarks: String = "",
+    val groupRemarks: String = "",
+    val daysRemaining: Long? = null,
+    val trafficUsedBytes: Long? = null,
+    val trafficTotalBytes: Long? = null,
+    val homeGroupId: String = "",
+    val homeLastUpdatedEpochMs: Long? = null
+)
+
+/**
+ * Derives the home fields from the selected [profile] and its [subscription].
+ * Subscription userinfo is authoritative for the expiry and the only source
+ * for traffic; the remarks expiry marker is the fallback for days remaining.
+ * Traffic fields are set whenever userinfo exists; a total of 0 means the
+ * provider reports no quota (the UI renders it as unlimited).
+ */
+internal fun computeMainHomeData(
+    profile: ProfileItem?,
+    subscription: SubscriptionItem?,
+    nowEpochSeconds: Long = System.currentTimeMillis() / 1000
+): MainHomeData {
+    val userinfo = SubscriptionUserinfoParser.parse(subscription?.userinfoRaw)
+    val daysRemaining = SubscriptionUserinfoParser.daysRemaining(userinfo?.expireEpochSeconds, nowEpochSeconds)
+        ?: SubscriptionUserinfoParser.parseDaysFromRemarks(subscription?.remarks)
+    return MainHomeData(
+        selectedRemarks = profile?.remarks.orEmpty(),
+        groupRemarks = SubscriptionUserinfoParser.displayName(subscription?.remarks),
+        daysRemaining = daysRemaining,
+        trafficUsedBytes = userinfo?.usedBytes,
+        trafficTotalBytes = userinfo?.totalBytes,
+        homeGroupId = profile?.subscriptionId.orEmpty(),
+        homeLastUpdatedEpochMs = subscription?.lastUpdated?.takeIf { it > 0L }
+    )
 }
 
 class MainViewModel(
@@ -308,6 +347,8 @@ class MainViewModel(
             is MainAction.ImportManually,
             MainAction.RestartService,
             MainAction.LocateSelectedServer,
+            MainAction.ShowHome,
+            MainAction.ShowServers,
             is MainAction.EditServer,
             is MainAction.ShareClipboard,
             is MainAction.ShareFullContent -> {
@@ -466,7 +507,7 @@ class MainViewModel(
                         groups = groups,
                         selectedGroupId = selectedGroup,
                         selectedGuid = dataSource.getSelectServer(),
-                    )
+                    ).withHomeData()
                 }
                 groups.forEach { mutableServerGroupState(it.id) }
 
@@ -770,11 +811,29 @@ class MainViewModel(
 
     fun updateSelectedGuid(guid: String) {
         dataSource.setSelectServer(guid)
-        _uiState.update { it.copy(selectedGuid = guid) }
+        _uiState.update { it.copy(selectedGuid = guid).withHomeData() }
     }
 
     fun refreshSelectedGuid() {
-        _uiState.update { it.copy(selectedGuid = dataSource.getSelectServer()) }
+        _uiState.update { it.copy(selectedGuid = dataSource.getSelectServer()).withHomeData() }
+    }
+
+    /** Recomputes the home fields for this state's current selection. */
+    private fun MainUiState.withHomeData(): MainUiState {
+        val profile = selectedGuid?.let { dataSource.decodeServerConfig(it) }
+        val subscription = profile?.subscriptionId
+            ?.takeIf { it.isNotEmpty() }
+            ?.let { dataSource.getSubscriptionItem(it) }
+        val home = computeMainHomeData(profile, subscription)
+        return copy(
+            selectedRemarks = home.selectedRemarks,
+            groupRemarks = home.groupRemarks,
+            daysRemaining = home.daysRemaining,
+            trafficUsedBytes = home.trafficUsedBytes,
+            trafficTotalBytes = home.trafficTotalBytes,
+            homeGroupId = home.homeGroupId,
+            homeLastUpdatedEpochMs = home.homeLastUpdatedEpochMs
+        )
     }
 
     fun removeServerAndRefresh(guid: String) {
@@ -931,6 +990,57 @@ class MainViewModel(
                 else if (running) MainStatus.Connected else MainStatus.Disconnected
             )
         }
+        if (running) startStatsPolling() else stopStatsPolling()
+    }
+
+    // ---------- Home live stats ----------
+    private var statsJob: Job? = null
+    private var runningSinceMs: Long? = null
+
+    /**
+     * Polls the core traffic counters once per second while the service runs
+     * and publishes speed + elapsed time for the home stats row. The core
+     * counters reset on every query, so the first poll only establishes the
+     * baseline. No service start timestamp exists in the service layer, so
+     * the elapsed time counts from when this ViewModel first observed the
+     * running state.
+     */
+    private fun startStatsPolling() {
+        if (runningSinceMs == null) runningSinceMs = System.currentTimeMillis()
+        if (statsJob?.isActive == true) return
+        statsJob = viewModelScope.launch {
+            withContext(ioDispatcher) { dataSource.queryTrafficDelta() }
+            var lastQueryMs = System.currentTimeMillis()
+            while (true) {
+                delay(STATS_POLL_INTERVAL_MS)
+                val nowMs = System.currentTimeMillis()
+                val (uplink, downlink) = withContext(ioDispatcher) { dataSource.queryTrafficDelta() }
+                val windowSeconds = (nowMs - lastQueryMs) / 1000.0
+                lastQueryMs = nowMs
+                if (windowSeconds <= 0.0) continue
+                val sinceMs = runningSinceMs
+                _uiState.update {
+                    it.copy(
+                        homeUpSpeedBytesPerSec = (uplink / windowSeconds).toLong(),
+                        homeDownSpeedBytesPerSec = (downlink / windowSeconds).toLong(),
+                        homeElapsedSeconds = if (sinceMs != null) (nowMs - sinceMs) / 1000 else 0L
+                    )
+                }
+            }
+        }
+    }
+
+    private fun stopStatsPolling() {
+        statsJob?.cancel()
+        statsJob = null
+        runningSinceMs = null
+        _uiState.update {
+            it.copy(
+                homeUpSpeedBytesPerSec = 0L,
+                homeDownSpeedBytesPerSec = 0L,
+                homeElapsedSeconds = 0L
+            )
+        }
     }
 
     override fun onCleared() {
@@ -939,6 +1049,7 @@ class MainViewModel(
         selectedGroupLoadJob?.cancel()
         reloadJob?.cancel()
         filterJob?.cancel()
+        statsJob?.cancel()
         cancelAllPing()
         dataSource.close()
         super.onCleared()
@@ -957,5 +1068,6 @@ class MainViewModel(
 
     private companion object {
         const val TEST_RESULT_FLUSH_INTERVAL_MS = 500L
+        const val STATS_POLL_INTERVAL_MS = 1000L
     }
 }

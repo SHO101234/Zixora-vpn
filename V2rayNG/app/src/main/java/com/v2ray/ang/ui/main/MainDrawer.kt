@@ -44,12 +44,12 @@ enum class MainDestination(@DrawableRes val iconRes: Int, @StringRes val labelRe
     Logcat(R.drawable.ic_logcat_24dp, R.string.title_logcat),
     CheckUpdate(R.drawable.ic_check_update_24dp, R.string.update_check_for_update),
     BackupRestore(R.drawable.ic_restore_24dp, R.string.title_configuration_backup_restore),
-    SupportFacebook(R.drawable.ic_feedback_24dp, R.string.support_facebook),
-    SupportTelegram(R.drawable.ic_telegram_24dp, R.string.support_telegram),
+    SupportFacebook(R.drawable.ic_support_facebook_24dp, R.string.support_facebook),
+    SupportTelegram(R.drawable.ic_support_telegram_24dp, R.string.support_telegram),
     About(R.drawable.ic_about_24dp, R.string.title_about)
 }
 
-private val primaryDrawerItems = listOf(
+internal val primaryDrawerItems = listOf(
     MainDestination.Subscriptions,
     MainDestination.PerAppProxy,
     MainDestination.Routing,
@@ -57,7 +57,7 @@ private val primaryDrawerItems = listOf(
     MainDestination.Settings
 )
 
-private val drawerItems = primaryDrawerItems + listOf(
+internal val drawerItems = primaryDrawerItems + listOf(
     MainDestination.Promotion,
     MainDestination.Logcat,
     MainDestination.CheckUpdate,
@@ -66,6 +66,25 @@ private val drawerItems = primaryDrawerItems + listOf(
     MainDestination.SupportTelegram,
     MainDestination.About
 )
+
+/**
+ * Icon for a drawer destination. The support entries carry their brands' own
+ * colors in the drawable, so they render without a theme tint; every other
+ * icon takes the theme tint.
+ */
+@Composable
+internal fun MainDestinationIcon(item: MainDestination, modifier: Modifier = Modifier) {
+    if (item == MainDestination.SupportFacebook || item == MainDestination.SupportTelegram) {
+        Icon(
+            painterResource(item.iconRes),
+            contentDescription = null,
+            modifier = modifier,
+            tint = Color.Unspecified
+        )
+    } else {
+        Icon(painterResource(item.iconRes), contentDescription = null, modifier = modifier)
+    }
+}
 
 @Composable
 fun MainDrawerContent(drawerState: DrawerState, onNavigate: (MainDestination) -> Unit) {
@@ -117,7 +136,7 @@ fun MainDrawerContent(drawerState: DrawerState, onNavigate: (MainDestination) ->
                     label = { Text(stringResource(item.labelRes)) },
                     selected = false,
                     onClick = { onNavigate(item) },
-                    icon = { Icon(painterResource(item.iconRes), contentDescription = null) },
+                    icon = { MainDestinationIcon(item) },
                     modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
                 )
             }

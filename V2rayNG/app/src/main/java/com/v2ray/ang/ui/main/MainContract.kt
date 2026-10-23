@@ -20,6 +20,20 @@ data class MainUiState(
     val groups: List<GroupMapItem> = emptyList(),
     val selectedGroupId: String = "",
     val selectedGuid: String? = null,
+    // Home data derived from the selected profile and its subscription.
+    // groupRemarks is display-ready (expiry marker stripped); the traffic
+    // fields are set only when the provider reported subscription userinfo.
+    val selectedRemarks: String = "",
+    val groupRemarks: String = "",
+    val daysRemaining: Long? = null,
+    val trafficUsedBytes: Long? = null,
+    val trafficTotalBytes: Long? = null,
+    val homeGroupId: String = "",
+    val homeLastUpdatedEpochMs: Long? = null,
+    // Live stats for the home stats row; zero unless the service is running.
+    val homeUpSpeedBytesPerSec: Long = 0,
+    val homeDownSpeedBytesPerSec: Long = 0,
+    val homeElapsedSeconds: Long = 0,
     val isRunning: Boolean = false,
     val isTesting: Boolean = false,
     val status: MainStatus = MainStatus.Disconnected,
@@ -53,6 +67,8 @@ sealed interface MainAction {
     data class ImportManually(val type: Int) : MainAction
     data object RestartService : MainAction
     data object LocateSelectedServer : MainAction
+    data object ShowHome : MainAction
+    data object ShowServers : MainAction
 
     data class SelectGroup(val groupId: String) : MainAction
     data class SelectServer(val guid: String) : MainAction

@@ -28,6 +28,12 @@ interface MainDataSource : Closeable {
     fun getSubscriptions(): List<SubscriptionCache>
     fun getSubscriptionItem(id: String): SubscriptionItem?
 
+    /**
+     * Proxy + direct traffic bytes transferred since the previous call
+     * (uplink, downlink). The core counters reset on every query.
+     */
+    fun queryTrafficDelta(): Pair<Long, Long>
+
     fun getServerGuidList(groupId: String): List<String>
     fun decodeServerConfig(guid: String): ProfileItem?
     fun decodeAffiliationInfo(guid: String): ServerAffiliationInfo?
