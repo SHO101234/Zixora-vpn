@@ -2,4 +2,11 @@
 <resources>
     <string name="support_facebook">အကူအညီ – Facebook Page</string>
     <string name="support_telegram">အကူအညီ – Telegram Bot</string>
+    <string name="home_days_remaining">%1$d ရက် ကျန်ပါသည်</string>
+    <string name="home_subscription_expired">သက်တမ်းကုန်ဆုံးသွားပါပြီ</string>
+    <string name="home_traffic_format">%2$s မှ %1$s သုံးပြီး</string>
+    <string name="home_no_server_selected">ဆာဗာ မရွေးရသေးပါ</string>
+    <string name="home_show_servers">ဆာဗာများ</string>
+    <string name="home_traffic_total_unlimited">%1$s / ∞</string>
+    <string name="tab_home">ပင်မ</string>
 </resources>
