@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name" translatable="false">v2rayNG</string>
+    <string name="app_name" translatable="false">Zixora</string>
     <string name="app_widget_name">v2rayNG</string>
     <string name="app_tile_name">v2rayNG</string>
     <string name="app_tile_first_use">Добавьте профиль в приложении перед использованием этой функции.</string>
@@ -412,6 +412,14 @@
     <string name="connection_connected">Подключено.\nНажмите, чтобы проверить соединение.</string>
     <string name="connection_not_connected">Нет соединения</string>
     <string name="connection_running_task_left">Выполняется проверок: %s</string>
+
+    <string name="home_days_remaining">Осталось дней: %1$d</string>
+    <string name="home_subscription_expired">Подписка истекла</string>
+    <string name="home_traffic_format">Использовано %1$s из %2$s</string>
+    <string name="home_no_server_selected">Сервер не выбран</string>
+    <string name="home_show_servers">Серверы</string>
+    <string name="home_traffic_total_unlimited">%1$s / ∞</string>
+    <string name="tab_home">Главная</string>
 
     <string name="import_subscription_success">Подписка импортирована</string>
     <string name="import_subscription_failure">Невозможно импортировать подписку</string>
