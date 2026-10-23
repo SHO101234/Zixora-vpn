@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name" translatable="false">v2rayNG</string>
+    <string name="app_name" translatable="false">Zixora</string>
     <string name="app_widget_name">التبديل</string>
     <string name="app_tile_name">التبديل</string>
     <string name="app_tile_first_use">أول استخدام لهذه الميزة، يرجى استخدام التطبيق لإضافة خادم</string>
@@ -416,6 +416,14 @@
     <string name="connection_connected">متصل. اضغط للتحقق من الاتصال.</string>
     <string name="connection_not_connected">غير متصل</string>
     <string name="connection_running_task_left">الاختبارات قيد التشغيل: %s</string>
+
+    <string name="home_days_remaining">الأيام المتبقية: %1$d</string>
+    <string name="home_subscription_expired">انتهى الاشتراك</string>
+    <string name="home_traffic_format">تم استخدام %1$s من %2$s</string>
+    <string name="home_no_server_selected">لم يتم اختيار خادم</string>
+    <string name="home_show_servers">الخوادم</string>
+    <string name="home_traffic_total_unlimited">%1$s / ∞</string>
+    <string name="tab_home">الرئيسية</string>
 
     <string name="import_subscription_success">تم استيراد الاشتراك بنجاح</string>
     <string name="import_subscription_failure">فشل استيراد الاشتراك</string>
