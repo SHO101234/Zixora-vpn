@@ -19,6 +19,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
@@ -78,6 +79,7 @@ internal fun MainHomeContent(
     Column(
         modifier = modifier
             .fillMaxSize()
+            .background(MaterialTheme.colorScheme.surfaceContainer)
             .verticalScroll(rememberScrollState())
             .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally
@@ -172,7 +174,12 @@ internal fun MainHomeContent(
         if (showCard) {
             Spacer(modifier = Modifier.height(28.dp))
 
-            Card(modifier = Modifier.fillMaxWidth()) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                )
+            ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         if (groupRemarks.isNotBlank()) {
@@ -299,7 +306,7 @@ private fun HomeServerRow(
             .clip(RoundedCornerShape(12.dp))
             .background(
                 if (selected) MaterialTheme.colorScheme.primaryContainer
-                else MaterialTheme.colorScheme.surface
+                else MaterialTheme.colorScheme.surfaceContainer
             )
             .border(
                 width = if (selected) 1.5.dp else 1.dp,
