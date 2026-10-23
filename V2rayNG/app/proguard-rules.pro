@@ -19,3 +19,9 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+# zixora: keep JNI bridge for hev-socks5-tunnel (tun2socks) — renaming these
+# native methods makes JNI_OnLoad fail (UnsatisfiedLinkError) and the VPN
+# service crashes on start.
+-keep class com.v2ray.ang.service.TProxyService { *; }
+-keep class com.v2ray.ang.service.TProxyService$Companion { *; }
+-keepclasseswithmembernames class * { native <methods>; }
