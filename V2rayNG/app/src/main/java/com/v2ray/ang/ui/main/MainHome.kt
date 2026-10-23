@@ -295,17 +295,24 @@ private fun HomeServerRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .padding(vertical = 3.dp)
             .clip(RoundedCornerShape(12.dp))
             .background(
                 if (selected) MaterialTheme.colorScheme.primaryContainer
-                else Color.Transparent
+                else MaterialTheme.colorScheme.surface
+            )
+            .border(
+                width = if (selected) 1.5.dp else 1.dp,
+                color = if (selected) MaterialTheme.colorScheme.primary
+                else MaterialTheme.colorScheme.outlineVariant,
+                shape = RoundedCornerShape(12.dp)
             )
             .clickable(onClick = onClick)
             .padding(horizontal = 12.dp, vertical = 10.dp)
             .semantics(mergeDescendants = true) { this.selected = selected },
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Column {
+        Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = row.remarks,
                 style = MaterialTheme.typography.bodyLarge,
@@ -331,6 +338,22 @@ private fun HomeServerRow(
                         modifier = Modifier.padding(start = 8.dp)
                     )
                 }
+            }
+        }
+        if (selected) {
+            Box(
+                modifier = Modifier
+                    .size(24.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.primary),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.ic_action_done),
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onPrimary,
+                    modifier = Modifier.size(14.dp)
+                )
             }
         }
     }
