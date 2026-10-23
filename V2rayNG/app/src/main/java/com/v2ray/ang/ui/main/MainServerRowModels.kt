@@ -30,12 +30,23 @@ internal fun buildServerRowUiModel(
         guid = server.guid,
         profile = profile,
         remarks = profile.remarks,
-        statistics = profile.description.nullIfBlank()
-            ?: AngConfigManager.generateDescription(profile),
+        statistics = visibleRowDescription(profile),
         typeDescription = serverProtocolDescription(profile),
         testDelayMillis = server.testDelayMillis,
         subscriptionBadge = subscriptionRemarks.firstOrNull()?.toString().orEmpty(),
     )
+}
+
+/**
+ * The auto-generated description is the (partially masked) server address line
+ * ("host.*** : port"). The main list must not surface server addresses, so the
+ * generated value is hidden both when it was stored at import time and when it
+ * would be produced as the fallback. A genuine user-written description that
+ * differs from the generated one is kept.
+ */
+private fun visibleRowDescription(profile: ProfileItem): String {
+    val stored = profile.description.nullIfBlank() ?: return ""
+    return if (stored == AngConfigManager.generateDescription(profile)) "" else stored
 }
 
 private fun serverProtocolDescription(profile: ProfileItem): String {
