@@ -19,7 +19,20 @@ import java.net.URI
 import java.net.URL
 import java.util.concurrent.TimeUnit
 
+/**
+ * Result of a URL fetch that also exposes response metadata.
+ *
+ * @property content The response body as a string.
+ * @property subscriptionUserinfo The `subscription-userinfo` header value, or null when absent.
+ */
+data class UrlContentResponse(
+    val content: String,
+    val subscriptionUserinfo: String?
+)
+
 object HttpUtil {
+
+    private const val HEADER_SUBSCRIPTION_USERINFO = "subscription-userinfo"
 
     /**
      * Converts the domain part of a URL string to its IDN (Punycode, ASCII Compatible Encoding) format.
@@ -194,6 +207,82 @@ object HttpUtil {
 
                     response.isSuccessful -> {
                         return response.body?.string() ?: ""
+                    }
+
+                    else -> {
+                        throw IOException("Request failed with status code ${response.code}")
+                    }
+                }
+            }
+        }
+        throw IOException("Too many redirects")
+    }
+
+    /**
+     * Retrieves the content of a URL as a string with a custom User-Agent header,
+     * following the same redirect handling as [getUrlContentWithUserAgent], and
+     * also returns the `subscription-userinfo` response header when present so
+     * callers can record subscription usage metadata.
+     *
+     * @param request The URL request to fetch content for.
+     * @return The body plus the `subscription-userinfo` header value, if any.
+     * @throws IOException If an I/O error occurs.
+     */
+    @Throws(IOException::class)
+    fun getUrlContentWithUserAgentAndUserinfo(request: UrlContentRequest): UrlContentResponse {
+        var currentUrl = request.url
+        var redirects = 0
+        val maxRedirects = 3
+
+        while (redirects++ < maxRedirects) {
+            if (currentUrl == null) continue
+            val client = buildOkHttpClient(request.timeout, request.httpPort, request.proxyUsername, request.proxyPassword, followRedirects = false)
+            val finalUserAgent = if (request.userAgent.isNullOrBlank()) {
+                "v2rayNG/${BuildConfig.VERSION_NAME}"
+            } else {
+                request.userAgent
+            }
+            val requestBuilder = Request.Builder()
+                .url(currentUrl)
+                .get()
+                .header("User-agent", finalUserAgent)
+                .header("Connection", "close")
+
+            applyEmbeddedBasicAuthHeader(currentUrl, requestBuilder)
+
+
+            val headersMap = JsonUtil.parseHeadersToMap(request.requestHeaders)
+            for ((key, value) in headersMap) {
+                LogUtil.d(AppConfig.TAG, "Adding custom header: $key = $value")
+                try {
+                    requestBuilder.header(key, value)
+                } catch (_: IllegalArgumentException) {
+                }
+            }
+
+            if (request.httpPort != 0 && !request.proxyUsername.isNullOrBlank() && !request.proxyPassword.isNullOrBlank()) {
+                requestBuilder.header("Proxy-Authorization", Credentials.basic(request.proxyUsername, request.proxyPassword))
+            }
+
+            client.newCall(requestBuilder.build()).execute().use { response ->
+                when {
+                    response.isRedirect -> {
+                        val location = response.header("Location")
+                        if (location.isNullOrEmpty()) {
+                            throw IOException("Redirect location not found")
+                        }
+                        currentUrl = resolveLocation(currentUrl, location)
+                        if (currentUrl.isNullOrEmpty()) {
+                            throw IOException("Failed to resolve redirect location")
+                        }
+                        continue
+                    }
+
+                    response.isSuccessful -> {
+                        return UrlContentResponse(
+                            content = response.body?.string() ?: "",
+                            subscriptionUserinfo = response.header(HEADER_SUBSCRIPTION_USERINFO)
+                        )
                     }
 
                     else -> {
