@@ -154,6 +154,14 @@ class MainActivity : HelperBaseComponentActivity() {
                 )
                 return
             }
+            MainDestination.SupportFacebook -> {
+                Utils.openUri(this, AppConfig.SUPPORT_FACEBOOK_URL)
+                return
+            }
+            MainDestination.SupportTelegram -> {
+                Utils.openUri(this, AppConfig.SUPPORT_TELEGRAM_URL)
+                return
+            }
         }
         settingsActivityLauncher.launch(intent)
     }
