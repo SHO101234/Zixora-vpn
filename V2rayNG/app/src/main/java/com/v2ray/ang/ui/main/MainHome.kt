@@ -27,6 +27,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -38,12 +39,14 @@ import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.v2ray.ang.R
 import com.v2ray.ang.extension.toSpeedString
 import com.v2ray.ang.extension.toTrafficString
+import com.v2ray.ang.ui.compose.ThemeManager
 import com.v2ray.ang.ui.compose.colorConfigType
+import com.v2ray.ang.ui.compose.colorFabInactiveLight
 import com.v2ray.ang.ui.compose.colorPing
-import com.v2ray.ang.ui.compose.colorPingRed
 import java.util.Locale
 
 /**
@@ -71,6 +74,8 @@ internal fun MainHomeContent(
     upSpeedBytesPerSec: Long,
     downSpeedBytesPerSec: Long,
     elapsedSeconds: Long,
+    isTesting: Boolean,
+    lastBulkTestEpochMs: Long,
     onAction: (MainAction) -> Unit,
     onNavigate: (MainDestination) -> Unit,
     modifier: Modifier = Modifier
@@ -82,20 +87,44 @@ internal fun MainHomeContent(
     // primary and the dark scheme's surfaceContainer both resolve to navy
     // #091F5B; the paired colors below resolve to white / light blue in
     // both schemes, so every element stays readable on the navy.
+    // Glass theme: the whole screen goes glass-light instead — glass
+    // backdrop, navy text, blue secondary text. Other themes are unchanged.
+    val appTheme by ThemeManager.appTheme.collectAsStateWithLifecycle()
+    val isGlass = appTheme == "glass"
     val darkScheme = MaterialTheme.colorScheme.background.luminance() < 0.5f
-    val backdrop = if (darkScheme) MaterialTheme.colorScheme.surfaceContainer
+    val backdrop = if (isGlass) MaterialTheme.colorScheme.surfaceContainer
+    else if (darkScheme) MaterialTheme.colorScheme.surfaceContainer
     else MaterialTheme.colorScheme.primary
-    val onBackdrop = if (darkScheme) MaterialTheme.colorScheme.onBackground
+    val onBackdrop = if (isGlass) MaterialTheme.colorScheme.onBackground
+    else if (darkScheme) MaterialTheme.colorScheme.onBackground
     else MaterialTheme.colorScheme.onPrimary
-    val onBackdropVariant = if (darkScheme) MaterialTheme.colorScheme.onSurfaceVariant
+    val onBackdropVariant = if (isGlass) MaterialTheme.colorScheme.onSurfaceVariant
+    else if (darkScheme) MaterialTheme.colorScheme.onSurfaceVariant
+    else MaterialTheme.colorScheme.primaryContainer
+    // INCY-style uniform backdrop: the group card and its rows sit directly
+    // on the navy backdrop — never a white/light card under the key. The
+    // selected row gets a low-alpha wash only (white on navy, navy on glass).
+    val rowWash = if (isGlass) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+    else Color.White.copy(alpha = 0.12f)
+    val barTrack = if (isGlass) MaterialTheme.colorScheme.primary.copy(alpha = 0.16f)
+    else Color.White.copy(alpha = 0.16f)
+    val barColor = if (isGlass) MaterialTheme.colorScheme.primary
     else MaterialTheme.colorScheme.primaryContainer
 
     // Auto real-ping once per group so ping numbers show without a manual
-    // test (owner request). Re-fires only when the group/server set changes
-    // and no results exist yet.
-    val pingKey = groupRemarks + "|" + serverRows.size
+    // test (owner request). Re-fires when the group/server set changes,
+    // when the screen is re-entered, and when the last bulk test goes
+    // stale — but never while a test is already running, and never on a
+    // ticking clock: the key carries only a stale boolean, the clock
+    // comparison happens inside the effect body via isBulkTestStale.
+    val bulkTestStale = isBulkTestStale(
+        lastBulkTestEpochMs, System.currentTimeMillis()
+    )
+    val pingKey = groupRemarks + "|" + serverRows.size + "|" + bulkTestStale
     LaunchedEffect(pingKey) {
-        if (serverRows.isNotEmpty() && serverRows.all { it.testDelayMillis == 0L }) {
+        if (!isTesting && serverRows.isNotEmpty() &&
+            (serverRows.all { it.testDelayMillis == 0L } || bulkTestStale)
+        ) {
             onAction(MainAction.TestRealAllServers)
         }
     }
@@ -208,7 +237,13 @@ internal fun MainHomeContent(
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surface
+                    // Uniform backdrop: the card itself is transparent so the
+                    // navy backdrop shows through (INCY-style). A white card
+                    // here is exactly the white block seen on-device when a
+                    // key is present. All inner text/icons use onBackdrop
+                    // colors below, so they stay readable on navy and glass.
+                    containerColor = Color.Transparent,
+                    contentColor = onBackdrop
                 )
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
@@ -217,6 +252,7 @@ internal fun MainHomeContent(
                             Text(
                                 text = groupRemarks,
                                 style = MaterialTheme.typography.titleMedium,
+                                color = onBackdrop,
                                 modifier = Modifier.weight(1f)
                             )
                         } else {
@@ -230,14 +266,32 @@ internal fun MainHomeContent(
                                     DateUtils.MINUTE_IN_MILLIS
                                 ).toString(),
                                 style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                color = onBackdropVariant
                             )
                         }
                         IconButton(onClick = { onAction(MainAction.UpdateSubscriptions) }) {
                             Icon(
                                 painter = painterResource(R.drawable.ic_refresh_24dp),
-                                contentDescription = stringResource(R.string.title_sub_update)
+                                contentDescription = stringResource(R.string.title_sub_update),
+                                tint = onBackdrop
                             )
+                        }
+                        // Manual bulk retest for this group (ping numbers go
+                        // stale; the auto-ping only re-fires on group/set
+                        // change or staleness). Disabled while a test runs.
+                        if (serverRows.isNotEmpty()) {
+                            IconButton(
+                                onClick = { onAction(MainAction.TestRealAllServers) },
+                                enabled = !isTesting
+                            ) {
+                                Icon(
+                                    painter = painterResource(R.drawable.ic_flash_on_24dp),
+                                    contentDescription = stringResource(
+                                        R.string.home_retest_all_servers
+                                    ),
+                                    tint = onBackdrop
+                                )
+                            }
                         }
                     }
 
@@ -250,7 +304,8 @@ internal fun MainHomeContent(
                                 } else {
                                     stringResource(R.string.home_days_remaining, daysRemaining)
                                 },
-                                style = MaterialTheme.typography.bodyMedium
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = onBackdrop
                             )
                         }
                         if (trafficUsedBytes != null) {
@@ -261,7 +316,9 @@ internal fun MainHomeContent(
                                         (trafficUsedBytes.toFloat() / trafficTotalBytes.toFloat())
                                             .coerceIn(0f, 1f)
                                     },
-                                    modifier = Modifier.fillMaxWidth()
+                                    modifier = Modifier.fillMaxWidth(),
+                                    color = barColor,
+                                    trackColor = barTrack
                                 )
                                 Spacer(modifier = Modifier.height(4.dp))
                                 Text(
@@ -270,7 +327,8 @@ internal fun MainHomeContent(
                                         trafficUsedBytes.toTrafficString(),
                                         trafficTotalBytes.toTrafficString()
                                     ),
-                                    style = MaterialTheme.typography.bodySmall
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = onBackdropVariant
                                 )
                             } else {
                                 Text(
@@ -278,7 +336,8 @@ internal fun MainHomeContent(
                                         R.string.home_traffic_total_unlimited,
                                         trafficUsedBytes.toTrafficString()
                                     ),
-                                    style = MaterialTheme.typography.bodySmall
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = onBackdropVariant
                                 )
                             }
                         }
@@ -291,7 +350,23 @@ internal fun MainHomeContent(
                             HomeServerRow(
                                 row = row,
                                 selected = row.guid == selectedGuid,
-                                onClick = { onAction(MainAction.SelectServer(row.guid)) }
+                                isTesting = isTesting,
+                                onBackdrop = onBackdrop,
+                                onBackdropVariant = onBackdropVariant,
+                                rowWash = rowWash,
+                                // Dead rows must not become the connectable
+                                // config: tapping one re-tests the group
+                                // instead of selecting it (no-op while a
+                                // test is already running).
+                                onClick = {
+                                    if (row.testDelayMillis < 0L) {
+                                        if (!isTesting) {
+                                            onAction(MainAction.TestRealAllServers)
+                                        }
+                                    } else {
+                                        onAction(MainAction.SelectServer(row.guid))
+                                    }
+                                }
                             )
                         }
                     }
@@ -328,21 +403,50 @@ internal fun MainHomeContent(
 private fun HomeServerRow(
     row: ServerRowUiModel,
     selected: Boolean,
+    isTesting: Boolean,
+    onBackdrop: Color,
+    onBackdropVariant: Color,
+    rowWash: Color,
     onClick: () -> Unit
 ) {
+    // Dead keys show "Timeout" in grey (never the red number, never blank);
+    // unmeasured rows show "Testing..." in grey while a bulk test runs and
+    // stay blank otherwise.
+    val delayText: String?
+    val delayColor: Color
+    when {
+        row.testDelayMillis < 0L -> {
+            delayText = stringResource(R.string.server_test_timeout)
+            delayColor = colorFabInactiveLight
+        }
+        row.testDelayMillis == 0L && isTesting -> {
+            delayText = stringResource(R.string.server_test_testing)
+            delayColor = colorFabInactiveLight
+        }
+        row.testDelayMillis != 0L -> {
+            delayText = stringResource(
+                R.string.server_test_delay_value,
+                row.testDelayMillis
+            )
+            delayColor = colorPing
+        }
+        else -> {
+            delayText = null
+            delayColor = Color.Unspecified
+        }
+    }
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 3.dp)
             .clip(RoundedCornerShape(12.dp))
             .background(
-                if (selected) MaterialTheme.colorScheme.primaryContainer
-                else MaterialTheme.colorScheme.surfaceContainer
+                if (selected) rowWash else Color.Transparent
             )
             .border(
-                width = if (selected) 1.5.dp else 1.dp,
+                width = if (selected) 1.5.dp else 0.dp,
                 color = if (selected) MaterialTheme.colorScheme.primary
-                else MaterialTheme.colorScheme.outlineVariant,
+                else Color.Transparent,
                 shape = RoundedCornerShape(12.dp)
             )
             .clickable(onClick = onClick)
@@ -354,25 +458,21 @@ private fun HomeServerRow(
             Text(
                 text = row.remarks,
                 style = MaterialTheme.typography.bodyLarge,
-                color = if (selected) MaterialTheme.colorScheme.onPrimaryContainer
-                else MaterialTheme.colorScheme.onSurface
+                color = onBackdrop
             )
             Row(verticalAlignment = Alignment.CenterVertically) {
                 if (row.typeDescription.isNotBlank()) {
                     Text(
                         text = row.typeDescription,
                         style = MaterialTheme.typography.bodySmall,
-                        color = colorConfigType
+                        color = onBackdropVariant
                     )
                 }
-                if (row.testDelayMillis != 0L) {
+                if (delayText != null) {
                     Text(
-                        text = stringResource(
-                            R.string.server_test_delay_value,
-                            row.testDelayMillis
-                        ),
+                        text = delayText,
                         style = MaterialTheme.typography.bodySmall,
-                        color = if (row.testDelayMillis < 0L) colorPingRed else colorPing,
+                        color = delayColor,
                         modifier = Modifier.padding(start = 8.dp)
                     )
                 }

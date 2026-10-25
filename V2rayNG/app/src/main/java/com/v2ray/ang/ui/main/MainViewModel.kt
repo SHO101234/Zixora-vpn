@@ -19,6 +19,7 @@ import com.v2ray.ang.extension.delay
 import com.v2ray.ang.extension.isComplexType
 import com.v2ray.ang.extension.matchesPattern
 import com.v2ray.ang.extension.moveItem
+import com.v2ray.ang.handler.MmkvManager
 import com.v2ray.ang.ui.base.BaseViewModel
 import com.v2ray.ang.util.LogUtil
 import com.v2ray.ang.util.SubscriptionUserinfoParser
@@ -818,6 +819,13 @@ class MainViewModel(
         _uiState.update { it.copy(selectedGuid = dataSource.getSelectServer()).withHomeData() }
     }
 
+    /** Last bulk real-ping start time for a group, or 0 when never tested. */
+    private fun lastBulkTestEpochMs(groupId: String): Long =
+        if (groupId.isEmpty()) 0L
+        else MmkvManager.decodeSettingsLong(
+            AppConfig.PREF_LAST_BULK_TEST_PREFIX + groupId, 0L
+        )
+
     /** Recomputes the home fields for this state's current selection. */
     private fun MainUiState.withHomeData(): MainUiState {
         val profile = selectedGuid?.let { dataSource.decodeServerConfig(it) }
@@ -832,7 +840,8 @@ class MainViewModel(
             trafficUsedBytes = home.trafficUsedBytes,
             trafficTotalBytes = home.trafficTotalBytes,
             homeGroupId = home.homeGroupId,
-            homeLastUpdatedEpochMs = home.homeLastUpdatedEpochMs
+            homeLastUpdatedEpochMs = home.homeLastUpdatedEpochMs,
+            lastBulkTestEpochMs = lastBulkTestEpochMs(home.homeGroupId)
         )
     }
 
@@ -893,6 +902,13 @@ class MainViewModel(
         if (servers.isEmpty()) {
             return
         }
+        // Record the bulk-test start per group so Home can tell when its
+        // numbers go stale; written here (not in a composable) alongside
+        // the existing result-clearing below.
+        val bulkTestStartedMs = System.currentTimeMillis()
+        MmkvManager.encodeSettings(
+            AppConfig.PREF_LAST_BULK_TEST_PREFIX + groupId, bulkTestStartedMs
+        )
         val serverGuids = servers.map { it.guid }
         mutableServerGroupState(groupId).update { current ->
             current.copy(
@@ -916,7 +932,8 @@ class MainViewModel(
         _uiState.update {
             it.copy(
                 isTesting = true,
-                status = MainStatus.Testing
+                status = MainStatus.Testing,
+                lastBulkTestEpochMs = bulkTestStartedMs
             )
         }
         bulkTestJob = viewModelScope.launch {

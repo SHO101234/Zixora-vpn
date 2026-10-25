@@ -285,9 +285,14 @@ fun ReorderableListItem(
     content: @Composable RowScope.() -> Unit
 ) {
     val elevation by reorderableElevation(isDragging)
+    // Transparent: the default Surface color is white under the navy and
+    // primary light schemes, which painted every server row white and hid
+    // its white-on-navy text (only emoji + green ping stayed visible).
+    // Rows must show the screen backdrop; the drag shadow still works.
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        shadowElevation = elevation
+        shadowElevation = elevation,
+        color = Color.Transparent
     ) {
         Row(
             modifier = Modifier
@@ -306,11 +311,13 @@ fun ReorderableGridItem(
     content: @Composable () -> Unit
 ) {
     val elevation by reorderableElevation(isDragging)
+    // Same transparent-backdrop reason as ReorderableListItem above.
     Surface(
         modifier = Modifier
             .fillMaxWidth()
             .then(with(scope) { reorderableDragHandle() }),
-        shadowElevation = elevation
+        shadowElevation = elevation,
+        color = Color.Transparent
     ) {
         content()
     }
