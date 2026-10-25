@@ -48,15 +48,10 @@ fun MainBottomBar(
     isDarkTheme: Boolean,
     onAction: (MainAction) -> Unit
 ) {
-    val scope = rememberCoroutineScope()
-    val rotationAnim = remember { Animatable(0f) }
-
-    LaunchedEffect(isRunning) {
-        if (!isRunning) {
-            rotationAnim.snapTo(0f)
-        }
-    }
-
+    // No floating connect button here: this bar only ever renders on the
+    // Servers tab, and the FAB floated over the Servers bottom actions and
+    // covered the QR button. Connecting stays on Home's big button, and
+    // tapping a server row still selects it.
     Box(modifier = Modifier.fillMaxWidth()) {
         Column(
             modifier = Modifier
@@ -82,39 +77,6 @@ fun MainBottomBar(
                     }
                 )
             }
-        }
-        FloatingActionButton(
-            onClick = {
-                if (!isRunning) {
-                    scope.launch {
-                        rotationAnim.animateTo(
-                            targetValue = 720f,
-                            animationSpec = tween(durationMillis = 3000)
-                        )
-                    }
-                }
-                onAction(MainAction.ToggleService)
-            },
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(end = 24.dp)
-                .offset(y = (-28).dp)
-                .navigationBarsPadding(),
-            containerColor = if (isRunning) colorFabActive
-            else if (isDarkTheme) colorFabInactiveDark
-            else colorFabInactiveLight
-        ) {
-            Icon(
-                painter = if (isRunning) painterResource(R.drawable.ic_stop_24dp)
-                else painterResource(R.drawable.ic_play_24dp),
-                contentDescription = stringResource(
-                    if (isRunning) R.string.acc_stop else R.string.acc_start
-                ),
-                tint = Color.White,
-                modifier = Modifier
-                    .size(24.dp)
-                    .graphicsLayer { rotationZ = rotationAnim.value }
-            )
         }
     }
 }

@@ -101,6 +101,15 @@ internal fun MainHomeContent(
     val onBackdropVariant = if (isGlass) MaterialTheme.colorScheme.onSurfaceVariant
     else if (darkScheme) MaterialTheme.colorScheme.onSurfaceVariant
     else MaterialTheme.colorScheme.primaryContainer
+    // INCY-style uniform backdrop: the group card and its rows sit directly
+    // on the navy backdrop — never a white/light card under the key. The
+    // selected row gets a low-alpha wash only (white on navy, navy on glass).
+    val rowWash = if (isGlass) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+    else Color.White.copy(alpha = 0.12f)
+    val barTrack = if (isGlass) MaterialTheme.colorScheme.primary.copy(alpha = 0.16f)
+    else Color.White.copy(alpha = 0.16f)
+    val barColor = if (isGlass) MaterialTheme.colorScheme.primary
+    else MaterialTheme.colorScheme.primaryContainer
 
     // Auto real-ping once per group so ping numbers show without a manual
     // test (owner request). Re-fires when the group/server set changes,
@@ -228,13 +237,13 @@ internal fun MainHomeContent(
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(
-                    // In Glass mode the card must stay visible against the
-                    // glass backdrop, so it goes white instead of glass.
-                    containerColor = if (isGlass) {
-                        MaterialTheme.colorScheme.surfaceContainerLowest
-                    } else {
-                        MaterialTheme.colorScheme.surface
-                    }
+                    // Uniform backdrop: the card itself is transparent so the
+                    // navy backdrop shows through (INCY-style). A white card
+                    // here is exactly the white block seen on-device when a
+                    // key is present. All inner text/icons use onBackdrop
+                    // colors below, so they stay readable on navy and glass.
+                    containerColor = Color.Transparent,
+                    contentColor = onBackdrop
                 )
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
@@ -243,6 +252,7 @@ internal fun MainHomeContent(
                             Text(
                                 text = groupRemarks,
                                 style = MaterialTheme.typography.titleMedium,
+                                color = onBackdrop,
                                 modifier = Modifier.weight(1f)
                             )
                         } else {
@@ -256,13 +266,14 @@ internal fun MainHomeContent(
                                     DateUtils.MINUTE_IN_MILLIS
                                 ).toString(),
                                 style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                color = onBackdropVariant
                             )
                         }
                         IconButton(onClick = { onAction(MainAction.UpdateSubscriptions) }) {
                             Icon(
                                 painter = painterResource(R.drawable.ic_refresh_24dp),
-                                contentDescription = stringResource(R.string.title_sub_update)
+                                contentDescription = stringResource(R.string.title_sub_update),
+                                tint = onBackdrop
                             )
                         }
                         // Manual bulk retest for this group (ping numbers go
@@ -277,7 +288,8 @@ internal fun MainHomeContent(
                                     painter = painterResource(R.drawable.ic_flash_on_24dp),
                                     contentDescription = stringResource(
                                         R.string.home_retest_all_servers
-                                    )
+                                    ),
+                                    tint = onBackdrop
                                 )
                             }
                         }
@@ -292,7 +304,8 @@ internal fun MainHomeContent(
                                 } else {
                                     stringResource(R.string.home_days_remaining, daysRemaining)
                                 },
-                                style = MaterialTheme.typography.bodyMedium
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = onBackdrop
                             )
                         }
                         if (trafficUsedBytes != null) {
@@ -303,7 +316,9 @@ internal fun MainHomeContent(
                                         (trafficUsedBytes.toFloat() / trafficTotalBytes.toFloat())
                                             .coerceIn(0f, 1f)
                                     },
-                                    modifier = Modifier.fillMaxWidth()
+                                    modifier = Modifier.fillMaxWidth(),
+                                    color = barColor,
+                                    trackColor = barTrack
                                 )
                                 Spacer(modifier = Modifier.height(4.dp))
                                 Text(
@@ -312,7 +327,8 @@ internal fun MainHomeContent(
                                         trafficUsedBytes.toTrafficString(),
                                         trafficTotalBytes.toTrafficString()
                                     ),
-                                    style = MaterialTheme.typography.bodySmall
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = onBackdropVariant
                                 )
                             } else {
                                 Text(
@@ -320,7 +336,8 @@ internal fun MainHomeContent(
                                         R.string.home_traffic_total_unlimited,
                                         trafficUsedBytes.toTrafficString()
                                     ),
-                                    style = MaterialTheme.typography.bodySmall
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = onBackdropVariant
                                 )
                             }
                         }
@@ -334,6 +351,9 @@ internal fun MainHomeContent(
                                 row = row,
                                 selected = row.guid == selectedGuid,
                                 isTesting = isTesting,
+                                onBackdrop = onBackdrop,
+                                onBackdropVariant = onBackdropVariant,
+                                rowWash = rowWash,
                                 // Dead rows must not become the connectable
                                 // config: tapping one re-tests the group
                                 // instead of selecting it (no-op while a
@@ -384,6 +404,9 @@ private fun HomeServerRow(
     row: ServerRowUiModel,
     selected: Boolean,
     isTesting: Boolean,
+    onBackdrop: Color,
+    onBackdropVariant: Color,
+    rowWash: Color,
     onClick: () -> Unit
 ) {
     // Dead keys show "Timeout" in grey (never the red number, never blank);
@@ -418,13 +441,12 @@ private fun HomeServerRow(
             .padding(vertical = 3.dp)
             .clip(RoundedCornerShape(12.dp))
             .background(
-                if (selected) MaterialTheme.colorScheme.primaryContainer
-                else MaterialTheme.colorScheme.surfaceContainer
+                if (selected) rowWash else Color.Transparent
             )
             .border(
-                width = if (selected) 1.5.dp else 1.dp,
+                width = if (selected) 1.5.dp else 0.dp,
                 color = if (selected) MaterialTheme.colorScheme.primary
-                else MaterialTheme.colorScheme.outlineVariant,
+                else Color.Transparent,
                 shape = RoundedCornerShape(12.dp)
             )
             .clickable(onClick = onClick)
@@ -436,15 +458,14 @@ private fun HomeServerRow(
             Text(
                 text = row.remarks,
                 style = MaterialTheme.typography.bodyLarge,
-                color = if (selected) MaterialTheme.colorScheme.onPrimaryContainer
-                else MaterialTheme.colorScheme.onSurface
+                color = onBackdrop
             )
             Row(verticalAlignment = Alignment.CenterVertically) {
                 if (row.typeDescription.isNotBlank()) {
                     Text(
                         text = row.typeDescription,
                         style = MaterialTheme.typography.bodySmall,
-                        color = colorConfigType
+                        color = onBackdropVariant
                     )
                 }
                 if (delayText != null) {
