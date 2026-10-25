@@ -161,8 +161,8 @@ fun MainDrawerContent(drawerState: DrawerState, onNavigate: (MainDestination) ->
                     colors = NavigationDrawerItemDefaults.colors(
                         selectedContainerColor = drawerSelectedContainer,
                         unselectedContainerColor = Color.Transparent,
-                        selectedLabelColor = drawerOnContainer,
-                        unselectedLabelColor = drawerOnContainer,
+                        selectedTextColor = drawerOnContainer,
+                        unselectedTextColor = drawerOnContainer,
                         selectedIconColor = drawerOnContainer,
                         unselectedIconColor = drawerOnContainer
                     ),
