@@ -128,7 +128,6 @@ fun MainSettingsContent(
                 SettingsEntry.Destination(MainDestination.Settings),
                 SettingsEntry.Destination(MainDestination.Promotion),
                 SettingsEntry.Destination(MainDestination.Logcat),
-                SettingsEntry.Destination(MainDestination.CheckUpdate),
                 SettingsEntry.Destination(MainDestination.BackupRestore),
                 SettingsEntry.Destination(MainDestination.SupportFacebook),
                 SettingsEntry.Destination(MainDestination.SupportTelegram),
