@@ -2,13 +2,7 @@ package com.v2ray.ang.ui.main
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.foundation.lazy.grid.LazyGridState
-import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -22,25 +16,20 @@ import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.v2ray.ang.R
 import com.v2ray.ang.dto.entities.ProfileItem
 import com.v2ray.ang.ui.compose.LocalDarkTheme
 import com.v2ray.ang.ui.compose.QRCodeDialog
-import kotlinx.coroutines.flow.distinctUntilChanged
+import com.v2ray.ang.ui.compose.ThemeManager
 import kotlinx.coroutines.launch
 
 /** Bottom-navigation tabs of the main screen. Home is the start tab. */
@@ -63,6 +52,10 @@ fun MainScreen(
     val shareQRCodeBitmap = uiState.shareQRCodeBitmap
 
     val isDarkTheme = LocalDarkTheme.current
+    // Glass theme: the Scaffold container is the Servers tab's backdrop, so
+    // it must go glass-light instead of navy when Glass is active. Home and
+    // Settings paint their own backdrops over it, so they are unaffected.
+    val appTheme by ThemeManager.appTheme.collectAsStateWithLifecycle()
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     var selectedTab by rememberSaveable { mutableStateOf(MainTab.HOME) }
@@ -98,42 +91,6 @@ fun MainScreen(
     // Server rows of the selected profile's group, shown inline on Home.
     val homeGroupState by mainViewModel.serverGroupState(uiState.homeGroupId)
         .collectAsStateWithLifecycle()
-
-    val pagerState = rememberPagerState(
-        initialPage = 0,
-        pageCount = { groups.size.coerceAtLeast(1) }
-    )
-
-    val lazyListStates = remember { mutableStateMapOf<String, LazyListState>() }
-    val lazyGridStates = remember { mutableStateMapOf<String, LazyGridState>() }
-
-    LaunchedEffect(groups) {
-        val validGroupIds = groups.map { it.id }.toSet()
-        lazyListStates.keys.retainAll(validGroupIds)
-        lazyGridStates.keys.retainAll(validGroupIds)
-    }
-
-    LaunchedEffect(groups, uiState.selectedGroupId) {
-        if (groups.isEmpty()) return@LaunchedEffect
-        val selectedIndex = groups.indexOfFirst { it.id == uiState.selectedGroupId }
-            .takeIf { it >= 0 } ?: 0
-        if (!pagerState.isScrollInProgress && pagerState.settledPage != selectedIndex) {
-            pagerState.scrollToPage(selectedIndex)
-        }
-    }
-
-    val latestGroups by rememberUpdatedState(groups)
-
-    LaunchedEffect(pagerState) {
-        snapshotFlow { pagerState.settledPage }
-            .distinctUntilChanged()
-            .collect { page ->
-                val currentGroups = latestGroups
-                if (page in currentGroups.indices) {
-                    onAction(MainAction.SelectGroup(currentGroups[page].id))
-                }
-            }
-    }
 
     MainDialogs(
         showDelAllConfirm = showDelAllConfirm,
@@ -178,8 +135,13 @@ fun MainScreen(
         }
     ) {
         Scaffold(
-            containerColor = if (isDarkTheme) MaterialTheme.colorScheme.surfaceContainer
-            else MaterialTheme.colorScheme.primary,
+            containerColor = if (appTheme == "glass") {
+                MaterialTheme.colorScheme.surfaceContainer
+            } else if (isDarkTheme) {
+                MaterialTheme.colorScheme.surfaceContainer
+            } else {
+                MaterialTheme.colorScheme.primary
+            },
             contentWindowInsets = ScaffoldDefaults.contentWindowInsets,
             topBar = {
                 MainTopBar(
@@ -266,8 +228,6 @@ fun MainScreen(
             },
             floatingActionButton = {},
         ) { innerPadding ->
-            val layoutDirection = LocalLayoutDirection.current
-
             when (selectedTab) {
                 MainTab.HOME -> MainHomeContent(
                     groupRemarks = uiState.groupRemarks,
@@ -283,74 +243,38 @@ fun MainScreen(
                     upSpeedBytesPerSec = uiState.homeUpSpeedBytesPerSec,
                     downSpeedBytesPerSec = uiState.homeDownSpeedBytesPerSec,
                     elapsedSeconds = uiState.homeElapsedSeconds,
+                    isTesting = uiState.isTesting,
+                    lastBulkTestEpochMs = uiState.lastBulkTestEpochMs,
                     onAction = onAction,
                     onNavigate = onNavigate,
                     modifier = Modifier.padding(innerPadding)
                 )
 
-                MainTab.SERVERS -> if (groups.isNotEmpty()) {
-                    Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(innerPadding)
-                ) {
-                    if (groups.size > 1) {
-                        GroupTabBar(
-                            groups = groups,
-                            selectedTabIndex = pagerState.currentPage.coerceIn(0, groups.lastIndex),
-                            mainViewModel = mainViewModel,
-                            onTabClick = { targetIndex ->
-                                scope.launch {
-                                    pagerState.navigateToPageOptimized(
-                                        targetPage = targetIndex,
-                                        animateAdjacentPage = true
-                                    )
-                                }
-                            }
-                        )
-                    }
-
-                    HorizontalPager(
-                        state = pagerState,
-                        modifier = Modifier.fillMaxSize(),
-                        userScrollEnabled = true,
-                        beyondViewportPageCount = 1,
-                        key = { page -> groups.getOrNull(page)?.id ?: "group-page-$page" }
-                    ) { page ->
-                        val group = groups.getOrNull(page) ?: return@HorizontalPager
-
-                        GroupPagerPage(
-                            groupId = group.id,
-                            mainViewModel = mainViewModel,
-                            selectedGuid = selectedGuid,
-                            locateTarget = uiState.locateTarget,
-                            doubleColumnDisplay = doubleColumnDisplay,
-                            searchQuery = searchQuery,
-                            lazyListStates = lazyListStates,
-                            lazyGridStates = lazyGridStates,
-                            onSelectServer = { guid -> onAction(MainAction.SelectServer(guid)) },
-                            onEditServer = { guid, profile -> onAction(MainAction.EditServer(guid, profile)) },
-                            onShareServer = { guid, profile ->
-                                shareTarget = Triple(guid, profile, false)
-                            },
-                            onMoreServer = { guid, profile ->
-                                shareTarget = Triple(guid, profile, true)
-                            },
-                            onRemoveServer = removeServer,
-                            contentPadding = PaddingValues(
-                                start = 0.dp,
-                                top = 0.dp,
-                                end = 0.dp,
-                                bottom = 80.dp
-                            )
-                        )
-                    }
-                }
-                }
+                MainTab.SERVERS -> MainServersScreen(
+                    mainViewModel = mainViewModel,
+                    groups = groups,
+                    selectedGuid = selectedGuid,
+                    locateTarget = uiState.locateTarget,
+                    doubleColumnDisplay = doubleColumnDisplay,
+                    searchQuery = searchQuery,
+                    isLoading = isLoading,
+                    onAction = onAction,
+                    onSelectServer = { guid -> onAction(MainAction.SelectServer(guid)) },
+                    onEditServer = { guid, profile -> onAction(MainAction.EditServer(guid, profile)) },
+                    onShareServer = { guid, profile ->
+                        shareTarget = Triple(guid, profile, false)
+                    },
+                    onMoreServer = { guid, profile ->
+                        shareTarget = Triple(guid, profile, true)
+                    },
+                    onRemoveServer = removeServer,
+                    modifier = Modifier.padding(innerPadding)
+                )
 
                 MainTab.SETTINGS -> MainSettingsContent(
                     onNavigate = onNavigate,
-                    modifier = Modifier.padding(innerPadding)
+                    modifier = Modifier.padding(innerPadding),
+                    mainViewModel = mainViewModel
                 )
             }
         }
