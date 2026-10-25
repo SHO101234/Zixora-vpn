@@ -9,4 +9,32 @@
     <string name="home_show_servers">ဆာဗာများ</string>
     <string name="home_traffic_total_unlimited">%1$s / ∞</string>
     <string name="tab_home">ပင်မ</string>
+    <string name="servers_group_empty">ဒီဝန်ဆောင်မှုမှာ ဆာဗာ မရှိသေးပါ</string>
+    <string name="servers_no_groups">ဆာဗာ မရှိသေးပါ</string>
+    <string name="servers_search_empty">ရှာဖွေမှုနဲ့ ကိုက်ညီသော ဆာဗာ မရှိပါ</string>
+    <string name="servers_loading">ဆာဗာများ တင်နေသည်…</string>
+    <string name="servers_action_add">ထည့်</string>
+    <string name="servers_action_paste">ကူးထည့်</string>
+    <string name="servers_action_qr">QR</string>
+    <string name="servers_acc_refresh">ပြန်တင်</string>
+    <string name="servers_acc_expand">ချဲ့</string>
+    <string name="servers_acc_collapse">ခေါက်</string>
+    <plurals name="servers_count">
+        <item quantity="one">ဆာဗာ %1$d ခု</item>
+        <item quantity="other">ဆာဗာ %1$d ခု</item>
+    </plurals>
+    <plurals name="servers_provider_count">
+        <item quantity="one">ဝန်ဆောင်သူ %1$d ခု</item>
+        <item quantity="other">ဝန်ဆောင်သူ %1$d ခု</item>
+    </plurals>
+    <string name="settings_section_per_app_proxy">အက်ပ်အလိုက် ပရောက်စီ</string>
+    <string name="settings_section_appearance">အသွင်အပြင်</string>
+    <string name="settings_section_connection">ချိတ်ဆက်မှု</string>
+    <string name="settings_section_providers">ပရိုဗိုက်ဒါများ</string>
+    <string name="settings_section_application">အက်ပလီကေးရှင်း</string>
+    <string name="settings_theme">အပြင်အဆင်</string>
+    <string name="settings_theme_title">အပြင်အဆင်ရွေးပါ</string>
+    <string name="server_test_timeout">အချိန်လွန်</string>
+    <string name="server_test_testing">စမ်းသပ်နေသည်…</string>
+    <string name="home_retest_all_servers">ဆာဗာအားလုံးကို ပြန်စမ်းသပ်မည်</string>
 </resources>
