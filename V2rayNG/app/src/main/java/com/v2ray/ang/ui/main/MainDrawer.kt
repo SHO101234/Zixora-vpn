@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.DrawerState
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalDrawerSheet
@@ -21,6 +22,7 @@ import androidx.compose.material3.NavigationDrawerItemDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.BlendMode
@@ -29,9 +31,9 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.v2ray.ang.R
-import com.v2ray.ang.ui.compose.AppDivider
-import com.v2ray.ang.ui.compose.LocalDarkTheme
+import com.v2ray.ang.ui.compose.ThemeManager
 import com.v2ray.ang.ui.compose.verticalScrollbar
 
 enum class MainDestination(@DrawableRes val iconRes: Int, @StringRes val labelRes: Int) {
@@ -89,11 +91,28 @@ internal fun MainDestinationIcon(item: MainDestination, modifier: Modifier = Mod
 @Composable
 fun MainDrawerContent(drawerState: DrawerState, onNavigate: (MainDestination) -> Unit) {
     val drawerScrollState = rememberScrollState()
+    // Glass theme: the drawer goes glass-light with navy text instead of
+    // the always-navy drawer. The launcher icon is a SrcIn-tinted mask, so
+    // the same mechanism tints it navy here. Support icons keep their
+    // brand colors via MainDestinationIcon (tint Unspecified), untouched.
+    val appTheme by ThemeManager.appTheme.collectAsStateWithLifecycle()
+    val isGlass = appTheme == "glass"
+    val drawerNavy = Color(0xFF091F5B)
+    val drawerContainer = if (isGlass) {
+        MaterialTheme.colorScheme.surfaceContainer
+    } else {
+        drawerNavy
+    }
+    val drawerOnContainer = if (isGlass) drawerNavy else Color.White
+    val drawerDivider = if (isGlass) drawerNavy.copy(alpha = 0.16f)
+    else Color.White.copy(alpha = 0.16f)
+    val drawerSelectedContainer = if (isGlass) drawerNavy.copy(alpha = 0.12f)
+    else Color.White.copy(alpha = 0.12f)
 
     ModalDrawerSheet(
         drawerState = drawerState,
         modifier = Modifier.fillMaxWidth(0.75f),
-        drawerContainerColor = MaterialTheme.colorScheme.surface
+        drawerContainerColor = drawerContainer
     ) {
         Column(
             modifier = Modifier
@@ -103,7 +122,8 @@ fun MainDrawerContent(drawerState: DrawerState, onNavigate: (MainDestination) ->
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(180.dp)
+                    .height(180.dp),
+                color = Color.Transparent
             ) {
                 Column(
                     modifier = Modifier
@@ -112,31 +132,40 @@ fun MainDrawerContent(drawerState: DrawerState, onNavigate: (MainDestination) ->
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
                 ) {
-                    val isDarkTheme = LocalDarkTheme.current
                     Image(
                         painter = painterResource(R.mipmap.ic_launcher_foreground),
                         contentDescription = null,
                         modifier = Modifier.size(120.dp),
-                        colorFilter = if (isDarkTheme) {
-                            ColorFilter.tint(Color.White, BlendMode.SrcIn)
-                        } else {
-                            null
-                        }
+                        colorFilter = ColorFilter.tint(
+                            drawerOnContainer, BlendMode.SrcIn
+                        )
                     )
                     Text(
                         text = stringResource(R.string.app_name),
                         style = MaterialTheme.typography.titleLarge,
-                        color = MaterialTheme.colorScheme.onSurface
+                        color = drawerOnContainer
                     )
                 }
             }
             drawerItems.forEachIndexed { index, item ->
-                if (index == primaryDrawerItems.size) AppDivider()
+                if (index == primaryDrawerItems.size) HorizontalDivider(
+                    modifier = Modifier.fillMaxWidth(),
+                    thickness = 1.dp,
+                    color = drawerDivider
+                )
                 NavigationDrawerItem(
                     label = { Text(stringResource(item.labelRes)) },
                     selected = false,
                     onClick = { onNavigate(item) },
                     icon = { MainDestinationIcon(item) },
+                    colors = NavigationDrawerItemDefaults.colors(
+                        selectedContainerColor = drawerSelectedContainer,
+                        unselectedContainerColor = Color.Transparent,
+                        selectedLabelColor = drawerOnContainer,
+                        unselectedLabelColor = drawerOnContainer,
+                        selectedIconColor = drawerOnContainer,
+                        unselectedIconColor = drawerOnContainer
+                    ),
                     modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
                 )
             }

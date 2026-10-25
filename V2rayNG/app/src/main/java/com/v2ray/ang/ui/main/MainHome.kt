@@ -27,6 +27,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -38,12 +39,14 @@ import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.v2ray.ang.R
 import com.v2ray.ang.extension.toSpeedString
 import com.v2ray.ang.extension.toTrafficString
+import com.v2ray.ang.ui.compose.ThemeManager
 import com.v2ray.ang.ui.compose.colorConfigType
+import com.v2ray.ang.ui.compose.colorFabInactiveLight
 import com.v2ray.ang.ui.compose.colorPing
-import com.v2ray.ang.ui.compose.colorPingRed
 import java.util.Locale
 
 /**
@@ -71,6 +74,8 @@ internal fun MainHomeContent(
     upSpeedBytesPerSec: Long,
     downSpeedBytesPerSec: Long,
     elapsedSeconds: Long,
+    isTesting: Boolean,
+    lastBulkTestEpochMs: Long,
     onAction: (MainAction) -> Unit,
     onNavigate: (MainDestination) -> Unit,
     modifier: Modifier = Modifier
@@ -82,20 +87,35 @@ internal fun MainHomeContent(
     // primary and the dark scheme's surfaceContainer both resolve to navy
     // #091F5B; the paired colors below resolve to white / light blue in
     // both schemes, so every element stays readable on the navy.
+    // Glass theme: the whole screen goes glass-light instead — glass
+    // backdrop, navy text, blue secondary text. Other themes are unchanged.
+    val appTheme by ThemeManager.appTheme.collectAsStateWithLifecycle()
+    val isGlass = appTheme == "glass"
     val darkScheme = MaterialTheme.colorScheme.background.luminance() < 0.5f
-    val backdrop = if (darkScheme) MaterialTheme.colorScheme.surfaceContainer
+    val backdrop = if (isGlass) MaterialTheme.colorScheme.surfaceContainer
+    else if (darkScheme) MaterialTheme.colorScheme.surfaceContainer
     else MaterialTheme.colorScheme.primary
-    val onBackdrop = if (darkScheme) MaterialTheme.colorScheme.onBackground
+    val onBackdrop = if (isGlass) MaterialTheme.colorScheme.onBackground
+    else if (darkScheme) MaterialTheme.colorScheme.onBackground
     else MaterialTheme.colorScheme.onPrimary
-    val onBackdropVariant = if (darkScheme) MaterialTheme.colorScheme.onSurfaceVariant
+    val onBackdropVariant = if (isGlass) MaterialTheme.colorScheme.onSurfaceVariant
+    else if (darkScheme) MaterialTheme.colorScheme.onSurfaceVariant
     else MaterialTheme.colorScheme.primaryContainer
 
     // Auto real-ping once per group so ping numbers show without a manual
-    // test (owner request). Re-fires only when the group/server set changes
-    // and no results exist yet.
-    val pingKey = groupRemarks + "|" + serverRows.size
+    // test (owner request). Re-fires when the group/server set changes,
+    // when the screen is re-entered, and when the last bulk test goes
+    // stale — but never while a test is already running, and never on a
+    // ticking clock: the key carries only a stale boolean, the clock
+    // comparison happens inside the effect body via isBulkTestStale.
+    val bulkTestStale = isBulkTestStale(
+        lastBulkTestEpochMs, System.currentTimeMillis()
+    )
+    val pingKey = groupRemarks + "|" + serverRows.size + "|" + bulkTestStale
     LaunchedEffect(pingKey) {
-        if (serverRows.isNotEmpty() && serverRows.all { it.testDelayMillis == 0L }) {
+        if (!isTesting && serverRows.isNotEmpty() &&
+            (serverRows.all { it.testDelayMillis == 0L } || bulkTestStale)
+        ) {
             onAction(MainAction.TestRealAllServers)
         }
     }
@@ -208,7 +228,13 @@ internal fun MainHomeContent(
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surface
+                    // In Glass mode the card must stay visible against the
+                    // glass backdrop, so it goes white instead of glass.
+                    containerColor = if (isGlass) {
+                        MaterialTheme.colorScheme.surfaceContainerLowest
+                    } else {
+                        MaterialTheme.colorScheme.surface
+                    }
                 )
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
@@ -238,6 +264,22 @@ internal fun MainHomeContent(
                                 painter = painterResource(R.drawable.ic_refresh_24dp),
                                 contentDescription = stringResource(R.string.title_sub_update)
                             )
+                        }
+                        // Manual bulk retest for this group (ping numbers go
+                        // stale; the auto-ping only re-fires on group/set
+                        // change or staleness). Disabled while a test runs.
+                        if (serverRows.isNotEmpty()) {
+                            IconButton(
+                                onClick = { onAction(MainAction.TestRealAllServers) },
+                                enabled = !isTesting
+                            ) {
+                                Icon(
+                                    painter = painterResource(R.drawable.ic_flash_on_24dp),
+                                    contentDescription = stringResource(
+                                        R.string.home_retest_all_servers
+                                    )
+                                )
+                            }
                         }
                     }
 
@@ -291,7 +333,20 @@ internal fun MainHomeContent(
                             HomeServerRow(
                                 row = row,
                                 selected = row.guid == selectedGuid,
-                                onClick = { onAction(MainAction.SelectServer(row.guid)) }
+                                isTesting = isTesting,
+                                // Dead rows must not become the connectable
+                                // config: tapping one re-tests the group
+                                // instead of selecting it (no-op while a
+                                // test is already running).
+                                onClick = {
+                                    if (row.testDelayMillis < 0L) {
+                                        if (!isTesting) {
+                                            onAction(MainAction.TestRealAllServers)
+                                        }
+                                    } else {
+                                        onAction(MainAction.SelectServer(row.guid))
+                                    }
+                                }
                             )
                         }
                     }
@@ -328,8 +383,35 @@ internal fun MainHomeContent(
 private fun HomeServerRow(
     row: ServerRowUiModel,
     selected: Boolean,
+    isTesting: Boolean,
     onClick: () -> Unit
 ) {
+    // Dead keys show "Timeout" in grey (never the red number, never blank);
+    // unmeasured rows show "Testing..." in grey while a bulk test runs and
+    // stay blank otherwise.
+    val delayText: String?
+    val delayColor: Color
+    when {
+        row.testDelayMillis < 0L -> {
+            delayText = stringResource(R.string.server_test_timeout)
+            delayColor = colorFabInactiveLight
+        }
+        row.testDelayMillis == 0L && isTesting -> {
+            delayText = stringResource(R.string.server_test_testing)
+            delayColor = colorFabInactiveLight
+        }
+        row.testDelayMillis != 0L -> {
+            delayText = stringResource(
+                R.string.server_test_delay_value,
+                row.testDelayMillis
+            )
+            delayColor = colorPing
+        }
+        else -> {
+            delayText = null
+            delayColor = Color.Unspecified
+        }
+    }
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -365,14 +447,11 @@ private fun HomeServerRow(
                         color = colorConfigType
                     )
                 }
-                if (row.testDelayMillis != 0L) {
+                if (delayText != null) {
                     Text(
-                        text = stringResource(
-                            R.string.server_test_delay_value,
-                            row.testDelayMillis
-                        ),
+                        text = delayText,
                         style = MaterialTheme.typography.bodySmall,
-                        color = if (row.testDelayMillis < 0L) colorPingRed else colorPing,
+                        color = delayColor,
                         modifier = Modifier.padding(start = 8.dp)
                     )
                 }

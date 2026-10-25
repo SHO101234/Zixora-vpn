@@ -106,6 +106,158 @@ private val DarkColor = darkColorScheme(
     surfaceContainerHighest = Color(0xFF333234), // Dark Gray
 )
 
+/** Navy Dark-AMOLED: true-black backgrounds, navy containers, mid-blue accents. */
+private val AmoledColor = darkColorScheme(
+    primary = Color(0xFF6F96D1), // Light Blue
+    onPrimary = Color(0xFF000000), // Black
+    primaryContainer = Color(0xFF091F5B), // Zixora Navy
+    onPrimaryContainer = Color(0xFFD0E4FD), // Pale Blue
+    secondary = Color(0xFF6F96D1), // Light Blue
+    onSecondary = Color(0xFF000000), // Black
+    secondaryContainer = Color(0xFF091F5B), // Zixora Navy
+    onSecondaryContainer = Color(0xFFD0E4FD), // Pale Blue
+    tertiary = Color(0xFF009966), // Green
+    onTertiary = Color(0xFFFFFFFF), // White
+    tertiaryContainer = Color(0xFF005143), // Teal
+    onTertiaryContainer = Color(0xFFA0F2D0), // Light Green
+    error = Color(0xFFFFB4AB), // Light Red
+    errorContainer = Color(0xFF93000A), // Dark Red
+    onError = Color(0xFF690005), // Deep Red
+    onErrorContainer = Color(0xFFFFDAD6), // Light Red
+    background = Color(0xFF000000), // True Black
+    onBackground = Color(0xFFFFFFFF), // White
+    surface = Color(0xFF000000), // True Black
+    onSurface = Color(0xFFFFFFFF), // White
+    surfaceVariant = Color(0xFF111111), // Near Black
+    onSurfaceVariant = Color(0xFFD0E4FD), // Pale Blue
+    outline = Color(0xFF334DAE), // Zixora Blue
+    outlineVariant = Color(0xFF091F5B), // Zixora Navy
+    inverseSurface = Color(0xFFFFFFFF), // White
+    inverseOnSurface = Color(0xFF000000), // Black
+    inversePrimary = Color(0xFF091F5B), // Zixora Navy
+    scrim = Color(0xFF000000), // Black
+    surfaceTint = Color(0xFF6F96D1), // Light Blue
+    surfaceContainerLowest = Color(0xFF000000), // True Black
+    surfaceContainerLow = Color(0xFF000000), // True Black
+    surfaceContainer = Color(0xFF000000), // True Black
+    surfaceContainerHigh = Color(0xFF111111), // Near Black
+    surfaceContainerHighest = Color(0xFF111111), // Near Black
+)
+
+/** Primary Blue, light variant: #334DAE-dominant, glass-tinted surfaces. */
+private val PrimaryLightColor = lightColorScheme(
+    primary = Color(0xFF334DAE), // Zixora Blue
+    onPrimary = Color(0xFFFFFFFF), // White
+    primaryContainer = Color(0xFFD0E4FD), // Pale Blue
+    onPrimaryContainer = Color(0xFF091F5B), // Zixora Navy
+    secondary = Color(0xFF334DAE), // Zixora Blue
+    onSecondary = Color(0xFFFFFFFF), // White
+    secondaryContainer = Color(0xFFD0E4FD), // Pale Blue
+    onSecondaryContainer = Color(0xFF091F5B), // Zixora Navy
+    tertiary = Color(0xFF009966), // Green
+    onTertiary = Color(0xFFFFFFFF), // White
+    tertiaryContainer = Color(0xFFA0F2D0), // Light Green
+    onTertiaryContainer = Color(0xFF00201A), // Dark Teal
+    error = Color(0xFFBA1A1A), // Red
+    errorContainer = Color(0xFFFFDAD6), // Light Red
+    onError = Color(0xFFFFFFFF), // White
+    onErrorContainer = Color(0xFF410002), // Dark Red
+    background = Color(0xFFFFFFFF), // White
+    onBackground = Color(0xFF1C1B1F), // Near Black
+    surface = Color(0xFFFFFFFF), // White
+    onSurface = Color(0xFF1C1B1F), // Near Black
+    surfaceVariant = Color(0xFFE8F2FE), // Glass Blue
+    onSurfaceVariant = Color(0xFF334DAE), // Zixora Blue
+    outline = Color(0xFF6F96D1), // Light Blue
+    outlineVariant = Color(0xFFD0E4FD), // Pale Blue
+    inverseSurface = Color(0xFF091F5B), // Zixora Navy
+    inverseOnSurface = Color(0xFFFFFFFF), // White
+    inversePrimary = Color(0xFF6F96D1), // Light Blue
+    scrim = Color(0xFF000000), // Black
+    surfaceTint = Color(0xFF334DAE), // Zixora Blue
+    surfaceContainerLowest = Color(0xFFFFFFFF), // White
+    surfaceContainerLow = Color(0xFFF7F7F7), // Very Light Gray
+    surfaceContainer = Color(0xFFE8F2FE), // Glass Blue
+    surfaceContainerHigh = Color(0xFFD0E4FD), // Pale Blue
+    surfaceContainerHighest = Color(0xFFD0E4FD), // Pale Blue
+)
+
+/** Primary Blue, dark variant: navy backgrounds, #6F96D1 primary, #334DAE containers. */
+private val PrimaryDarkColor = darkColorScheme(
+    primary = Color(0xFF6F96D1), // Light Blue
+    onPrimary = Color(0xFF091F5B), // Zixora Navy
+    primaryContainer = Color(0xFF334DAE), // Zixora Blue
+    onPrimaryContainer = Color(0xFFD0E4FD), // Pale Blue
+    secondary = Color(0xFF6F96D1), // Light Blue
+    onSecondary = Color(0xFF091F5B), // Zixora Navy
+    secondaryContainer = Color(0xFF334DAE), // Zixora Blue
+    onSecondaryContainer = Color(0xFFD0E4FD), // Pale Blue
+    tertiary = Color(0xFF009966), // Green
+    onTertiary = Color(0xFFFFFFFF), // White
+    tertiaryContainer = Color(0xFF005143), // Teal
+    onTertiaryContainer = Color(0xFFA0F2D0), // Light Green
+    error = Color(0xFFFFB4AB), // Light Red
+    errorContainer = Color(0xFF93000A), // Dark Red
+    onError = Color(0xFF690005), // Deep Red
+    onErrorContainer = Color(0xFFFFDAD6), // Light Red
+    background = Color(0xFF091F5B), // Zixora Navy
+    onBackground = Color(0xFFFFFFFF), // White
+    surface = Color(0xFF091F5B), // Zixora Navy
+    onSurface = Color(0xFFFFFFFF), // White
+    surfaceVariant = Color(0xFF334DAE), // Zixora Blue
+    onSurfaceVariant = Color(0xFFD0E4FD), // Pale Blue
+    outline = Color(0xFF6F96D1), // Light Blue
+    outlineVariant = Color(0xFF334DAE), // Zixora Blue
+    inverseSurface = Color(0xFFD0E4FD), // Pale Blue
+    inverseOnSurface = Color(0xFF091F5B), // Zixora Navy
+    inversePrimary = Color(0xFF334DAE), // Zixora Blue
+    scrim = Color(0xFF000000), // Black
+    surfaceTint = Color(0xFF6F96D1), // Light Blue
+    surfaceContainerLowest = Color(0xFF091F5B), // Zixora Navy
+    surfaceContainerLow = Color(0xFF091F5B), // Zixora Navy
+    surfaceContainer = Color(0xFF091F5B), // Zixora Navy
+    surfaceContainerHigh = Color(0xFF334DAE), // Zixora Blue
+    surfaceContainerHighest = Color(0xFF334DAE), // Zixora Blue
+)
+
+/** Light Glass: white backgrounds, glass-tinted surfaces, navy text. */
+private val GlassColor = lightColorScheme(
+    primary = Color(0xFF091F5B), // Zixora Navy
+    onPrimary = Color(0xFFFFFFFF), // White
+    primaryContainer = Color(0xFFD0E4FD), // Pale Blue
+    onPrimaryContainer = Color(0xFF091F5B), // Zixora Navy
+    secondary = Color(0xFF334DAE), // Zixora Blue
+    onSecondary = Color(0xFFFFFFFF), // White
+    secondaryContainer = Color(0xFFE8F2FE), // Glass Blue
+    onSecondaryContainer = Color(0xFF091F5B), // Zixora Navy
+    tertiary = Color(0xFF009966), // Green
+    onTertiary = Color(0xFFFFFFFF), // White
+    tertiaryContainer = Color(0xFFA0F2D0), // Light Green
+    onTertiaryContainer = Color(0xFF00201A), // Dark Teal
+    error = Color(0xFFBA1A1A), // Red
+    errorContainer = Color(0xFFFFDAD6), // Light Red
+    onError = Color(0xFFFFFFFF), // White
+    onErrorContainer = Color(0xFF410002), // Dark Red
+    background = Color(0xFFFFFFFF), // White
+    onBackground = Color(0xFF091F5B), // Zixora Navy
+    surface = Color(0xFFE8F2FE), // Glass Blue
+    onSurface = Color(0xFF091F5B), // Zixora Navy
+    surfaceVariant = Color(0xFFD0E4FD), // Pale Blue
+    onSurfaceVariant = Color(0xFF334DAE), // Zixora Blue
+    outline = Color(0xFF6F96D1), // Light Blue
+    outlineVariant = Color(0xFFD0E4FD), // Pale Blue
+    inverseSurface = Color(0xFF091F5B), // Zixora Navy
+    inverseOnSurface = Color(0xFFFFFFFF), // White
+    inversePrimary = Color(0xFF6F96D1), // Light Blue
+    scrim = Color(0xFF000000), // Black
+    surfaceTint = Color(0xFF6F96D1), // Light Blue
+    surfaceContainerLowest = Color(0xFFFFFFFF), // White
+    surfaceContainerLow = Color(0xFFE8F2FE), // Glass Blue
+    surfaceContainer = Color(0xFFE8F2FE), // Glass Blue
+    surfaceContainerHigh = Color(0xFFD0E4FD), // Pale Blue
+    surfaceContainerHighest = Color(0xFFD0E4FD), // Pale Blue
+)
+
 /** Poppins app font (owner asked for a prettier font). Latin glyphs come
  *  from Poppins; Myanmar text falls back to the system font per glyph. */
 val PoppinsFamily = FontFamily(
@@ -166,6 +318,11 @@ object ThemeManager {
     )
     val dynamicColorEnabled: StateFlow<Boolean> = _dynamicColorEnabled.asStateFlow()
 
+    private val _appTheme = MutableStateFlow(
+        MmkvManager.decodeSettingsString(AppConfig.PREF_APP_THEME, "navy") ?: "navy"
+    )
+    val appTheme: StateFlow<String> = _appTheme.asStateFlow()
+
     fun setThemeMode(mode: String) {
         MmkvManager.encodeSettings(AppConfig.PREF_UI_MODE_NIGHT, mode)
         _themeMode.value = mode
@@ -176,12 +333,29 @@ object ThemeManager {
         _dynamicColorEnabled.value = enabled
     }
 
+    fun setAppTheme(theme: String) {
+        val normalized =
+            if (theme in setOf("navy", "amoled", "primary", "glass")) theme else "navy"
+        MmkvManager.encodeSettings(AppConfig.PREF_APP_THEME, normalized)
+        _appTheme.value = normalized
+    }
+
     fun refresh() {
         _themeMode.value =
             MmkvManager.decodeSettingsString(AppConfig.PREF_UI_MODE_NIGHT, "0") ?: "0"
         _dynamicColorEnabled.value =
             MmkvManager.decodeSettingsBool(AppConfig.PREF_DYNAMIC_COLOR, false)
+        _appTheme.value =
+            MmkvManager.decodeSettingsString(AppConfig.PREF_APP_THEME, "navy") ?: "navy"
     }
+}
+
+/** Display names are English brand names in every locale. */
+internal fun appThemeDisplayName(theme: String): String = when (theme) {
+    "amoled" -> "Navy Dark-AMOLED"
+    "primary" -> "Primary Blue"
+    "glass" -> "Light Glass"
+    else -> "Navy"
 }
 
 @Composable
@@ -202,13 +376,26 @@ fun AppTheme(
     content: @Composable () -> Unit
 ) {
     val dynamicColor by ThemeManager.dynamicColorEnabled.collectAsState()
+    val appTheme by ThemeManager.appTheme.collectAsState()
     val context = LocalContext.current
+    // Forced themes ignore the mode flag: AMOLED is always dark, Glass always light.
+    val effectiveDark = when (appTheme) {
+        "amoled" -> true
+        "glass" -> false
+        else -> darkTheme
+    }
+    // Dynamic color applies only to the default Navy theme; any picked theme
+    // always renders its own brand scheme, so picking a theme never silently
+    // does nothing.
     val colorScheme = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+        appTheme == "navy" && dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
+            if (effectiveDark) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }
 
-        darkTheme -> DarkColor
+        appTheme == "amoled" -> AmoledColor
+        appTheme == "primary" -> if (effectiveDark) PrimaryDarkColor else PrimaryLightColor
+        appTheme == "glass" -> GlassColor
+        effectiveDark -> DarkColor
         else -> LightColor
     }
     val snackbarController = rememberAppSnackbarController()
@@ -219,14 +406,14 @@ fun AppTheme(
             val activity = view.context as? Activity ?: return@SideEffect
             val window = activity.window
             WindowCompat.getInsetsController(window, view).apply {
-                isAppearanceLightStatusBars = !darkTheme
-                isAppearanceLightNavigationBars = !darkTheme
+                isAppearanceLightStatusBars = !effectiveDark
+                isAppearanceLightNavigationBars = !effectiveDark
             }
         }
     }
 
     CompositionLocalProvider(
-        LocalDarkTheme provides darkTheme,
+        LocalDarkTheme provides effectiveDark,
         LocalAppSnackbar provides snackbarController
     ) {
         MaterialTheme(

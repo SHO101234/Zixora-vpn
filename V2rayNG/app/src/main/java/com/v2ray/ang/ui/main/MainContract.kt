@@ -15,7 +15,21 @@ sealed interface MainStatus {
 
 /**
  * Main UI state
+ *
+ * Bulk real-ping results are considered stale after this long; Home
+ * re-tests the group when its last bulk test is older than this (or never
+ * ran). 10 minutes balances freshness against the cost of a full bulk test.
  */
+internal const val BULK_TEST_STALE_MS = 10L * 60L * 1000L
+
+/**
+ * Whether the home group's bulk real-ping numbers are stale: never tested
+ * (0) or older than [BULK_TEST_STALE_MS]. Pure function so it is unit
+ * testable; callers pass the clock explicitly instead of reading it here.
+ */
+internal fun isBulkTestStale(lastBulkTestEpochMs: Long, nowEpochMs: Long): Boolean =
+    lastBulkTestEpochMs <= 0L || nowEpochMs - lastBulkTestEpochMs > BULK_TEST_STALE_MS
+
 data class MainUiState(
     val groups: List<GroupMapItem> = emptyList(),
     val selectedGroupId: String = "",
@@ -30,6 +44,9 @@ data class MainUiState(
     val trafficTotalBytes: Long? = null,
     val homeGroupId: String = "",
     val homeLastUpdatedEpochMs: Long? = null,
+    // Epoch millis of the last bulk real-ping started for the home group
+    // (0 = never tested). Home re-tests when this is stale.
+    val lastBulkTestEpochMs: Long = 0L,
     // Live stats for the home stats row; zero unless the service is running.
     val homeUpSpeedBytesPerSec: Long = 0,
     val homeDownSpeedBytesPerSec: Long = 0,
