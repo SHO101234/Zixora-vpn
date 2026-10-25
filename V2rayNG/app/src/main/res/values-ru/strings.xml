@@ -573,4 +573,32 @@
     <string name="connection_test_empty_message">подробности отсутствуют</string>
     <string name="value_unknown">неизвестно</string>
 
+    <string name="servers_group_empty">No servers in this provider</string>
+    <string name="servers_no_groups">No servers yet</string>
+    <string name="servers_search_empty">No servers match your search</string>
+    <string name="servers_loading">Loading servers…</string>
+    <string name="servers_action_add">Add</string>
+    <string name="servers_action_paste">Paste</string>
+    <string name="servers_action_qr">QR</string>
+    <string name="servers_acc_refresh">Refresh</string>
+    <string name="servers_acc_expand">Expand</string>
+    <string name="servers_acc_collapse">Collapse</string>
+    <plurals name="servers_count">
+        <item quantity="one">%1$d server</item>
+        <item quantity="other">%1$d servers</item>
+    </plurals>
+    <plurals name="servers_provider_count">
+        <item quantity="one">%1$d provider</item>
+        <item quantity="other">%1$d providers</item>
+    </plurals>
+    <string name="settings_section_per_app_proxy">Per-app proxy</string>
+    <string name="settings_section_appearance">Appearance</string>
+    <string name="settings_section_connection">Connection</string>
+    <string name="settings_section_providers">Providers</string>
+    <string name="settings_section_application">Application</string>
+    <string name="settings_theme">Theme</string>
+    <string name="settings_theme_title">Choose theme</string>
+    <string name="server_test_timeout">Timeout</string>
+    <string name="server_test_testing">Testing…</string>
+    <string name="home_retest_all_servers">Retest all servers</string>
 </resources>
